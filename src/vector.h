@@ -21,7 +21,7 @@ class vector {
 
   explicit vector(size_type n) {
     create_storage(n);
-    for(size_type i = 0; i < n; ++i) {
+    for(;n != 0; --n) {
       m_allocator.construct(m_finish++);
     }
   }

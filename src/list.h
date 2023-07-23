@@ -300,6 +300,16 @@ class list {
     return iterator(new Node(pos.m_node_->m_prev_, pos.m_node_, value));
   }
 
+  template <typename... Args>
+  iterator insert_many(iterator pos,Args&&... args) {
+    ([&]
+    {
+      pos = insert(pos, args);
+      ++pos;
+    } (), ...);
+    return pos;
+  }
+
   void push_front(const_reference value) {
     new Node(m_base_, m_base_->m_next_, value);
   }
