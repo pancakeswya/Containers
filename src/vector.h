@@ -1,232 +1,142 @@
-#ifndef S21_CONTAINER_SRC_VECTOR_H_
-#define S21_CONTAINER_SRC_VECTOR_H_
+#ifndef VECTOR_H_
+#define VECTOR_H_
 
-#include <initializer_list>
-#include <iterator>
-#include <cstring>
-#include <limits>
 #include <memory>
+#include <initializer_list>
 
 namespace s21 {
 
-template <typename Tp>
-class VectorBase {
+template<typename Tp, typename Alloc = std::allocator<Tp>>
+class vector {
  public:
-  typedef Tp*                pointer;
-  typedef Tp                 value_type;
-  typedef size_t             size_type;
-  typedef std::allocator<Tp> allocator_type;
-
-  struct VectorImpl {
-    pointer m_start_;
-    pointer m_finish_;
-    pointer m_capacity_;
-
-    VectorImpl() noexcept : m_start_(), m_finish_(), m_capacity_() {}
-
-    VectorImpl(VectorImpl&& other) noexcept
-        : m_start_(other.m_start_), m_finish_(other.m_finish_), m_capacity_(other.m_capacity_) {
-      other.m_start_ = other.m_finish_ = other.m_capacity_ = nullptr;
-    }
-
-    void swap(VectorImpl& other) noexcept {
-      VectorImpl tmp(std::move(*this));
-      move(other);
-      other.move(tmp);
-    }
-
-    void copy(VectorImpl& other, size_type size) noexcept {
-      memcpy(m_start_, other.m_start_, size * sizeof(value_type));
-      m_finish_ += size;
-    }
-
-    void move(VectorImpl &other) noexcept {
-      m_start_ = other.m_start_;
-      m_finish_ = other.m_finish_;
-      m_capacity_ = other.m_capacity_;
-    }
-  };
-
-  VectorBase() = default;
-
-  explicit VectorBase(size_type n) : m_impl_() { create_storage(n); }
-
-  VectorBase(const VectorBase& other)  {
-    auto n = other.m_size();
-    create_storage(n);
-    m_impl_.copy(other, n);
-  }
-
-  VectorBase(VectorBase&& other) noexcept : m_impl_(std::move(other.m_impl_)) {}
-
-  ~VectorBase() { destroy_storage(); }
-
- protected:
-  allocator_type m_allocator_;
-  VectorImpl m_impl_;
-
-   size_type m_size() const noexcept {
-    return size_type(m_impl_.m_finish_ - m_impl_.m_start_);
-  }
-
-   size_type m_capacity() const noexcept {
-    return size_type(m_impl_.m_capacity_ - m_impl_.m_start_);
-  }
-
-  void create_storage(size_type size) {
-    m_impl_.m_start_ = (size != 0) ? m_allocator_.allocate(size) : nullptr;
-    m_impl_.m_finish_ = m_impl_.m_start_;
-    m_impl_.m_capacity_ = m_impl_.m_start_ + size;
-  }
-
-  void grow(size_type new_size) {
-    VectorBase tmp(new_size);
-    tmp.m_impl_.copy(m_impl_, m_size());
-    m_impl_.swap(tmp.m_impl_);
-  }
-
-  void shrink(size_type new_size) {
-    VectorBase tmp(new_size);
-    tmp.m_impl_.copy(m_impl_, new_size);
-    m_impl_.swap(tmp.m_impl_);
-  }
-
-  void destroy_storage() {
-    m_allocator_.deallocate(m_impl_.m_start_, m_impl_.m_capacity_ - m_impl_.m_start_);
-  }
-
-};
-
-template<typename Tp>
-class vector : protected VectorBase<Tp> {
- public:
-  typedef VectorBase<Tp>                Base;
-  typedef typename Base::value_type     value_type;
-  typedef Tp&                           reference;
-  typedef const Tp&                     const_reference;
-  typedef typename Base::size_type      size_type;
-  typedef typename Base::pointer        iterator;
-  typedef const Tp*                     const_iterator;
+  using value_type = Tp;
+  using iterator = Tp*;
+  using const_iterator = const Tp*;
+  using reference = Tp&;
+  using const_reference = const Tp&;
+  using size_type = size_t;
+  using allocator_type = Alloc;
 
   vector() = default;
 
-  explicit vector(size_type n) : Base(n) {}
+  explicit vector(size_type n) {
+    create_storage(n);
+    for(size_type i = 0; i < n; ++i) {
+      m_allocator.construct(m_finish++);
+    }
+  }
 
-  vector(std::initializer_list<value_type> const &items) : Base(items.size()) {
+  vector(std::initializer_list<value_type> const &items) {
+    create_storage(items.size());
     for (auto &item : items) {
-      push_back(item);
+      m_allocator.construct(m_finish++, item);
     }
   }
 
-  vector(const vector& other) noexcept : Base(other) {}
-
-  vector(vector&& other) noexcept : Base(std::move(other)) {}
-
-  ~vector() = default;
-
-  iterator begin() noexcept { return m_impl_.m_start_; }
-
-  const_iterator begin() const noexcept { return m_impl_.m_start_; }
-
-  const_iterator cbegin() const noexcept {
-    return m_impl_.m_start_;
-  }
-
-  iterator end() noexcept { return m_impl_.m_finish_; }
-
-  const_iterator end() const noexcept { return m_impl_.m_finish_; }
-
-  const_iterator cend() const noexcept {
-    return m_impl_.m_finish_;
-  }
-
-  size_type size() const noexcept {
-    return this->m_size();
-  }
-
-  size_type max_size() const noexcept {
-    return std::numeric_limits<size_type>::max()/sizeof(value_type);
-  }
-
-  bool empty() const noexcept {
-    return m_impl_.m_start_ == m_impl_.m_finish_;
-  }
-
-  size_type capacity() const noexcept {
-    return this->m_capacity();
-  }
-
-  void reserve(size_type new_cap) {
-    new_cap < size() ? this->shrink(new_cap) : this->grow(new_cap);
-  }
-
-  void shrink_to_fit() {
-    if (!full() && !empty()) {
-      this->shrink(size());
+  vector(const vector& other) {
+    create_storage(other.capacity());
+    for (auto &val : other) {
+      m_allocator.construct(m_finish++, val);
     }
   }
 
-  void clear() noexcept {
-    size_type cap = capacity();
-    this->destroy_storage();
-    this->create_storage(cap);
+  vector(vector&& other) noexcept
+    : m_start(other.m_start),m_finish(other.m_finish),
+      m_capacity(other.m_capacity), m_allocator(std::move(other.m_allocator)) {
+    other.m_start = other.m_finish = other.m_capacity = nullptr;
   }
 
-  reference at(size_type pos) noexcept {
-    return *(m_impl_.m_start_ + pos);
+  ~vector() {
+    destroy_storage();
   }
 
-  reference front() { return *m_impl_.m_start_; }
-
-  const_reference front() const { return *m_impl_.m_start_; }
-
-  reference back() { return *m_impl_.m_finish_; }
-
-  const_reference back() const { return *m_impl_.m_finish_; }
-
-  vector& operator=(const vector& other) noexcept {
-    vector tmp(other);
-    swap(tmp);
+  vector& operator=(const vector& other) {
+    if (this != &other) {
+      vector tmp(other);
+      swap(tmp);
+    }
     return *this;
   }
 
   vector& operator=(vector&& other)  noexcept {
     vector tmp(std::move(other));
-    swap(tmp);
+    if (this != &other) {
+      swap(tmp);
+    }
     return *this;
+  }
+
+  iterator begin() noexcept { return m_start; }
+
+  const_iterator begin() const noexcept { return m_start; }
+
+  const_iterator cbegin() const noexcept {
+    return m_start;
+  }
+
+  iterator end() noexcept { return m_finish; }
+
+  const_iterator end() const noexcept { return m_finish; }
+
+  const_iterator cend() const noexcept {
+    return m_finish;
+  }
+
+  size_type size() const noexcept {
+    return m_finish - m_start;
+  }
+
+  size_type max_size() const noexcept {
+    return m_allocator.max_size();
+  }
+
+  bool empty() const noexcept {
+    return begin() == end();
+  }
+
+  size_type capacity() const noexcept {
+    return m_capacity - m_start;
+  }
+
+  void clear() noexcept {
+    for(iterator p = begin(); p != end(); ++p) {
+      m_allocator.destroy(p);
+    }
+    m_finish = m_start = m_capacity = nullptr;
+  }
+
+  void reserve(size_type n) {
+    reallocate_storage(end(),n);
+  }
+
+  reference at(size_type pos) {
+    if (pos >= size()) {
+      throw std::out_of_range("Invalid position number");
+    }
+    return (*this)[pos];
   }
 
   reference operator[](size_type pos) { return at(pos); }
 
-  iterator insert(iterator pos, const_reference value) {
-    const auto offset = pos - begin();
-    if (full()) {
-      grow_cap();
-    }
-    m_impl_.m_finish_++;
-    iterator it = begin() + offset;
-    value_type prev_val = value, cur_val;
-    for (; it != end(); ++it) {
-      cur_val = *it;
-      *it = prev_val;
-      prev_val = cur_val;
-    }
-    return begin() + offset;
-  }
+  reference front() { return *begin(); }
 
-  void push_back(const value_type& value) {
-    insert(end(), value);
-  }
+  const_reference front() const { return *begin(); }
+
+  reference back() { return *(end() - 1); }
+
+  const_reference back() const { return *(end() - 1); }
 
   template <typename... Args>
   iterator emplace(const_iterator pos, Args&&... args) {
-    auto n = pos - cbegin();
-    if (full()) {
-      grow_cap();
+    auto offset = pos - begin();
+    if (storage_is_full()) {
+      grow_storage();
     }
-    Base::m_allocator_.construct(m_impl_.m_start_ + n, std::forward<Args>(args)...);
-    m_impl_.m_finish_++;
-    return m_impl_.m_start_ + n;
+    iterator new_pos = begin() + offset;
+    std::move(new_pos, end(), new_pos + 1);
+    m_allocator.construct(new_pos, std::forward<Args>(args)...);
+    m_finish++;
+    return new_pos;
   }
 
   template <typename... Args>
@@ -234,42 +144,101 @@ class vector : protected VectorBase<Tp> {
     emplace(cend(), std::forward<Args>(args)...);
   }
 
-  void erase(iterator pos) {
-    const auto n = pos - begin();
-    if (pos != end()) {
-      iterator cur = begin() + n;
-      iterator next = cur + 1;
-      for (; next != end(); next++, cur++) {
-        *cur = *next;
-      }
+  iterator insert(iterator pos, const_reference value) {
+    auto offset = pos - begin();
+    if (storage_is_full()) {
+      grow_storage();
     }
-    pop_back();
+    iterator new_pos = begin() + offset;
+    std::move(new_pos, end(), new_pos + 1);
+    m_allocator.construct(new_pos, value);
+    m_finish++;
+    return new_pos;
+  }
+
+  template <typename... Args>
+  iterator insert_many(iterator pos, Args&&... args) {
+    ([&]
+    {
+      pos = insert(pos, args);
+      ++pos;
+    } (), ...);
+    return pos;
+  }
+
+  void push_back(const_reference value) {
+    insert(end(), value);
   }
 
   void pop_back() {
-    m_impl_.m_finish_--;
-    this->shrink(capacity());
+    --m_finish;
+    m_allocator.destroy(end());
+  }
+
+  void shrink_to_fit() {
+    if (!storage_is_full() && !empty()) {
+      shrink_storage(size());
+    }
+  }
+
+  void erase(iterator pos) {
+    if (pos + 1 != end()) {
+      std::move(pos + 1, end(), pos);
+      pop_back();
+    }
   }
 
   void swap(vector& other) noexcept {
-    m_impl_.swap(other.m_impl_);
+    std::swap(m_start, other.m_start);
+    std::swap(m_finish, other.m_finish);
+    std::swap(m_capacity, other.m_capacity);
+    std::swap(m_allocator, other.m_allocator);
   }
 
  private:
-  using Base::m_impl_;
-
-  bool full() noexcept { return m_impl_.m_finish_ == m_impl_.m_capacity_; }
-
-  void grow_cap() {
-    auto new_cap = capacity() * 2;
-    if (new_cap == 0) {
-      new_cap++;
-    }
-    this->grow(new_cap);
+  bool storage_is_full() noexcept {
+    return m_finish == m_capacity;
   }
+
+  void reallocate_storage(iterator end_of_storage, size_type new_cap) {
+    size_type old_size = size();
+    size_type new_size = (new_cap < old_size) ? new_cap : old_size;
+    iterator new_start = m_allocator.allocate(new_cap);
+    std::move(begin(), end_of_storage, new_start);
+    destroy_storage();
+    m_start = new_start;
+    m_finish = m_start + new_size;
+    m_capacity = m_start + new_cap;
+  }
+
+  void grow_storage() {
+    size_type old_cap = capacity();
+    size_type new_cap = (old_cap == 0) ? 1 : old_cap * 2;
+    reallocate_storage(end(), new_cap);
+  }
+
+  void shrink_storage(size_type new_cap) {
+    reallocate_storage(begin() + new_cap, new_cap);
+  }
+
+  void create_storage(size_type n) {
+    m_start = (n != 0) ? m_allocator.allocate(n) : nullptr;
+    m_finish = m_start;
+    m_capacity = m_start + n;
+  }
+
+  void destroy_storage() {
+    m_allocator.deallocate(m_start, m_capacity - m_start);
+    m_start = m_finish = m_capacity = nullptr;
+  }
+
+  iterator m_start{},
+           m_finish{},
+           m_capacity{};
+  allocator_type m_allocator;
+
 };
 
 }
 
-
-#endif // S21_CONTAINER_SRC_VECTOR_H_
+#endif // VECTOR_H_
