@@ -10,7 +10,8 @@ namespace s21 {
 struct ListNodeBase {
   ListNodeBase() noexcept : m_prev_(this), m_next_(this) {}
 
-  ListNodeBase(ListNodeBase* const prev, ListNodeBase* const next) noexcept : m_prev_(prev), m_next_(next) {
+  ListNodeBase(ListNodeBase* const prev, ListNodeBase* const next) noexcept
+    : m_prev_(prev), m_next_(next) {
     m_prev_->m_next_ = m_next_->m_prev_ = this;
   }
 
@@ -34,12 +35,12 @@ struct ListNode : public ListNodeBase {
 template<typename Tp>
 class ListIterator {
  public:
-  typedef ListNode<Tp>                      Node;
-  typedef ptrdiff_t                         difference_type;
-  typedef std::bidirectional_iterator_tag   iterator_category;
-  typedef Tp                                value_type;
-  typedef Tp*                               pointer;
-  typedef Tp&                               reference;
+  using Node = ListNode<Tp>;
+  using difference_type = ptrdiff_t;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = Tp;
+  using pointer = Tp*;
+  using reference = Tp&;
 
   ListIterator() noexcept : m_node_() {}
 
@@ -86,13 +87,13 @@ class ListIterator {
 template<typename Tp>
 class ListConstIterator {
  public:
-  typedef ListIterator<Tp>                  iterator;
-  typedef const ListNode<Tp>                Node;
-  typedef ptrdiff_t                         difference_type;
-  typedef std::bidirectional_iterator_tag   iterator_category;
-  typedef Tp                                value_type;
-  typedef const Tp*                         pointer;
-  typedef const Tp&                         reference;
+  using iterator = ListIterator<Tp>;
+  using Node = const ListNode<Tp>;
+  using difference_type = ptrdiff_t;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = Tp;
+  using pointer = const Tp*;
+  using reference = const Tp&;
 
   ListConstIterator() noexcept : m_node_() {}
 
@@ -144,20 +145,20 @@ class ListConstIterator {
 template<typename Tp>
 class list {
  public:
-  typedef Tp                            value_type;
-  typedef Tp&                           reference;
-  typedef const Tp&                     const_reference;
-  typedef Tp*                           pointer;
-  typedef const Tp*                     const_pointer;
-  typedef ListNode<value_type>          Node;
-  typedef ListIterator<value_type>      iterator;
-  typedef ListConstIterator<value_type> const_iterator;
-  typedef size_t                        size_type;
+  using value_type = Tp;
+  using reference = Tp&;
+  using const_reference = const Tp&;
+  using pointer = Tp*;
+  using const_pointer = const Tp*;
+  using Node = ListNode<value_type>;
+  using iterator = ListIterator<value_type>;
+  using const_iterator = ListConstIterator<value_type>;
+  using size_type = size_t;
 
   list() : m_base_(new ListNodeBase) {}
 
   explicit list(size_type n) : list()  {
-    for (;n != 0; n--) {
+    for (;n != 0; --n) {
       emplace_back();
     }
   }
@@ -203,7 +204,7 @@ class list {
     }
   }
 
-   bool empty() const noexcept { return m_base_ == m_base_->m_next_; }
+  bool empty() const noexcept { return m_base_ == m_base_->m_next_; }
 
   void erase(iterator pos) {
     delete pos.m_node_;
@@ -218,7 +219,23 @@ class list {
   }
 
   void merge(list& other) {
-    splice(cend(), other);
+    if (this != &other) {
+      list tmp(size() + other.size());
+      auto it_tmp = tmp.begin();
+      for (;;) {
+        if (empty() && other.empty()) {
+          break;
+        } else if (other.empty() || front() < other.front()) {
+          *it_tmp = std::move(front());
+          pop_front();
+        } else {
+          *it_tmp = std::move(other.front());
+          other.pop_front();
+        }
+        it_tmp++;
+      }
+      swap(tmp);
+    }
   }
 
   void splice(const_iterator pos, list& other) {
