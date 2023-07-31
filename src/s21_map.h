@@ -1,34 +1,34 @@
-#ifndef MAP_H_
-#define MAP_H_
+#ifndef S21_CONTAINER_SRC_S21_MAP_H_
+#define S21_CONTAINER_SRC_S21_MAP_H_
 
-#include "rb_tree.h"
+#include "s21_tree.h"
 
 namespace s21 {
 
 template<typename Key, typename Tp, typename Compare = std::less<Key>>
 class map {
  public:
-  typedef Key                                    key_type;
-  typedef Tp                                     mapped_type;
-  typedef std::pair<const key_type, mapped_type> value_type;
-  typedef value_type&                            reference;
-  typedef const value_type&                      const_reference;
+  using key_type = Key;
+  using mapped_type = Tp;
+  using value_type = std::pair<const key_type, mapped_type>;
+  using reference = value_type&;
+  using const_reference = const value_type&;
 
-  struct compare_keys {
+  struct key_compare {
     bool operator()(const_reference lhs, const_reference rhs) const noexcept {
       return cmp(lhs.first, rhs.first);
     }
     Compare cmp;
   };
 
-  typedef rb_tree<value_type, compare_keys>      tree;
+  typedef RBTree<value_type, key_compare>      tree;
   typedef typename tree::iterator                iterator;
   typedef typename tree::const_iterator          const_iterator;
   typedef typename tree::size_type               size_type;
 
-  map() noexcept : m_tree() {}
+  map() = default;
 
-  map(std::initializer_list<value_type> const &items) : m_tree() {
+  map(std::initializer_list<value_type> const &items) {
     for(auto &item : items) {
       m_tree.insert(item);
     }
@@ -51,6 +51,10 @@ class map {
   }
 
   Tp& at(const Key& key) {
+    (*this)[key];
+  }
+
+  Tp& operator[](const Key& key) {
     for(auto it = begin(); it != end();++it) {
       if ((*it).first == key) {
         return (*it).second;
@@ -58,10 +62,6 @@ class map {
     }
     auto it = insert(value_type(key, Tp())).first;
     return (*it).second;
-  }
-
-  Tp& operator[](const Key& key) {
-    return at(key);
   }
 
   void clear() {
@@ -82,11 +82,6 @@ class map {
 
   std::pair<iterator, bool> insert(const value_type& value) {
     return m_tree.insert(value);
-  }
-
-  template <typename... Args>
-  std::pair<iterator,bool> emplace(Args&&... args) {
-    return m_tree.emplace(std::forward<Args>(args)...);
   }
 
   void erase(iterator pos) {
@@ -142,13 +137,10 @@ class map {
   }
 
  private:
-  tree m_tree;
+  tree m_tree{};
 
 };
 
-}
+} //namespace s21
 
-
-
-
-#endif
+#endif // S21_CONTAINER_SRC_S21_MAP_H_

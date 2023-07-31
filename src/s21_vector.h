@@ -1,8 +1,9 @@
-#ifndef VECTOR_H_
-#define VECTOR_H_
+#ifndef S21_CONTAINER_SRC_S21_VECTOR_H_
+#define S21_CONTAINER_SRC_S21_VECTOR_H_
 
 #include <memory>
 #include <initializer_list>
+#include <stdexcept>
 
 namespace s21 {
 
@@ -135,7 +136,7 @@ class vector {
     iterator new_pos = begin() + offset;
     std::move(new_pos, end(), new_pos + 1);
     m_allocator.construct(new_pos, std::forward<Args>(args)...);
-    m_finish++;
+    ++m_finish;
     return new_pos;
   }
 
@@ -152,7 +153,7 @@ class vector {
     iterator new_pos = begin() + offset;
     std::move(new_pos, end(), new_pos + 1);
     m_allocator.construct(new_pos, value);
-    m_finish++;
+    ++m_finish;
     return new_pos;
   }
 
@@ -164,6 +165,14 @@ class vector {
       ++pos;
     } (), ...);
     return pos;
+  }
+
+  template <typename... Args>
+  void insert_many_back(Args&&... args) {
+    ([&]
+    {
+      push_back(args);
+    } (), ...);
   }
 
   void push_back(const_reference value) {
@@ -239,6 +248,6 @@ class vector {
 
 };
 
-}
+} // namespace s21
 
-#endif // VECTOR_H_
+#endif // S21_CONTAINER_SRC_S21_VECTOR_H_

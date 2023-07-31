@@ -1,21 +1,25 @@
+#ifndef S21_CONTAINER_SRC_S21_SET_H_
+#define S21_CONTAINER_SRC_S21_SET_H_
+
 #include <initializer_list>
 #include <limits>
 
-#include "rb_tree.h"
+#include "s21_tree.h"
+#include "s21_vector.h"
 
 namespace s21 {
 
 template<typename Key, typename Compare = std::less<Key>>
 class set {
  public:
-  typedef rb_tree<Key, Compare>         tree;
-  typedef typename tree::iterator       iterator;
-  typedef typename tree::const_iterator const_iterator;
-  typedef typename tree::size_type      size_type;
-  typedef Key                           key_type;
-  typedef Key                           value_type;
-  typedef Key&                          reference;
-  typedef const Key&                    const_reference;
+  using tree = RBTree<Key, Compare>;
+  using iterator = typename tree::iterator;
+  using const_iterator = typename tree::const_iterator;
+  using size_type = typename tree::size_type;
+  using key_type = Key;
+  using value_type = Key;
+  using reference = Key&;
+  using const_reference = const Key&;
 
   set() noexcept : m_tree() {}
 
@@ -58,12 +62,18 @@ class set {
   }
 
   std::pair<iterator, bool> insert(const value_type& value) {
-    return m_tree.insert(value);
+    return m_tree.insert_unique(value);
   }
 
   template <typename... Args>
-  std::pair<iterator,bool> emplace(Args&&... args) {
-    return m_tree.emplace(std::forward<Args>(args)...);
+  vector<std::pair<iterator,bool>> insert_many(Args&&... args) {
+    vector<std::pair<iterator, bool>> inserted;
+    ([&]
+    {
+      auto ins_pair = insert(args);
+      inserted.push_back(ins_pair);
+    } (), ...);
+    return inserted;
   }
 
   void erase(iterator pos) {
@@ -110,4 +120,6 @@ class set {
 
 };
 
-}
+} // namespace s21
+
+#endif // S21_CONTAINER_SRC_S21_SET_H_
