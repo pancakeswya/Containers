@@ -86,7 +86,7 @@ struct RBTreeIterator {
   using NodePtr = RBTreeNode<Tp>*;
   using Self = RBTreeIterator<Tp>;
 
-  explicit RBTreeIterator(Base_ptr node = nullptr) noexcept: m_current(node) {}
+  explicit RBTreeIterator(Base_ptr node = nullptr) noexcept : m_current(node) {}
 
   Self &operator++() noexcept {
     m_current = RBTreeIncrement(m_current);
