@@ -16,7 +16,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f64ce63-6a66-4ef1-9b74-c1ea86272d6c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/s21_tree.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/s21_tree.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/s21_vector.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/s21_vector.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +71,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1690754089362</updated>
-      <workItem from="1690754092303" duration="8674000" />
+      <workItem from="1690754092303" duration="9641000" />
     </task>
     <servers />
   </component>

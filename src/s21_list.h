@@ -221,7 +221,7 @@ class list {
   }
 
   void merge(list& other) {
-    if (this == = &other) {
+    if (this == &other) {
       return;
     }
     list tmp(size() + other.size());
