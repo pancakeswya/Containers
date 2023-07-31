@@ -221,23 +221,24 @@ class list {
   }
 
   void merge(list& other) {
-    if (this != &other) {
-      list tmp(size() + other.size());
-      auto it_tmp = tmp.begin();
-      for (;;) {
-        if (empty() && other.empty()) {
-          break;
-        } else if (other.empty() || front() < other.front()) {
-          *it_tmp = std::move(front());
-          pop_front();
-        } else {
-          *it_tmp = std::move(other.front());
-          other.pop_front();
-        }
-        it_tmp++;
-      }
-      swap(tmp);
+    if (this == = &other) {
+      return;
     }
+    list tmp(size() + other.size());
+    auto it_tmp = tmp.begin();
+    for (;;) {
+      if (empty() && other.empty()) {
+        break;
+      } else if (other.empty() || front() < other.front()) {
+        *it_tmp = std::move(front());
+        pop_front();
+      } else {
+        *it_tmp = std::move(other.front());
+        other.pop_front();
+      }
+      it_tmp++;
+    }
+    swap(tmp);
   }
 
   void splice(const_iterator pos, list& other) {
