@@ -21,9 +21,9 @@ class set {
   using reference = Key&;
   using const_reference = const Key&;
 
-  set() noexcept : m_tree() {}
+  set() = default;
 
-  set(std::initializer_list<value_type> const &items) : m_tree() {
+  set(std::initializer_list<value_type> const &items) {
     for(auto &item : items) {
       m_tree.insert(item);
     }
@@ -116,7 +116,7 @@ class set {
   }
 
  private:
-  tree m_tree;
+  tree m_tree{};
 };
 
 } // namespace s21
