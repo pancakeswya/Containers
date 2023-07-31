@@ -185,14 +185,18 @@ class list {
   }
 
   list& operator=(const list& other) {
-    list tmp(other);
-    swap(tmp);
+    if (this != &other) {
+      list tmp(other);
+      swap(tmp);
+    }
     return *this;
   }
 
   list& operator=(list&& other) noexcept {
     list tmp(std::move(other));
-    swap(tmp);
+    if (this != &other) {
+      swap(tmp);
+    }
     return *this;
   }
 

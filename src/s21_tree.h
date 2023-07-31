@@ -234,14 +234,18 @@ class RBTree {
   ~RBTree() { DeleteTree(m_root); }
 
   RBTree& operator=(const RBTree& other) {
-    RBTree tmp(other);
-    swap(tmp);
+    if (this != &other) {
+      RBTree tmp(other);
+      swap(tmp);
+    }
     return *this;
   }
 
   RBTree& operator=(RBTree&& other) noexcept {
     RBTree tmp(std::move);
-    swap(tmp);
+    if (this != &other) {
+      swap(tmp);
+    }
     return *this;
   }
 
