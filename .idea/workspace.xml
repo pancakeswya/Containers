@@ -7,9 +7,7 @@
     <option name="reloaded" value="true" />
   </component>
   <component name="CMakeRunConfigurationManager">
-    <generated>
-      <config projectName="Containers" targetName="Containers" />
-    </generated>
+    <generated />
   </component>
   <component name="CMakeSettings">
     <configurations>
@@ -18,12 +16,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f64ce63-6a66-4ef1-9b74-c1ea86272d6c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/list.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/list.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/map.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/map.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/multiset.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/multiset.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rb_tree.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/rb_tree.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/set.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/set.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/vector.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/vector.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,11 +62,6 @@
         <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Containers" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Containers" TARGET_NAME="Containers" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Containers" RUN_TARGET_NAME="Containers">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -83,7 +71,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1690754089362</updated>
-      <workItem from="1690754092303" duration="7964000" />
+      <workItem from="1690754092303" duration="8307000" />
     </task>
     <servers />
   </component>

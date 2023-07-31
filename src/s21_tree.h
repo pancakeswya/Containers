@@ -12,7 +12,7 @@ struct RBTreeNodeBase {
   using BasePtr = RBTreeNodeBase*;
 
   RBTreeNodeBase() = default;
-  explicit RBTreeNodeBase(RBNodeColor color) : m_color(color) {}
+  explicit RBTreeNodeBase(RBNodeColor color) noexcept : m_color(color) {}
 
   RBNodeColor m_color{};
   BasePtr m_parent{};
@@ -20,11 +20,11 @@ struct RBTreeNodeBase {
   BasePtr m_right{};
 };
 
-bool operator==(RBTreeNodeBase *lhs, RBNodeColor rhs) {
+bool operator==(RBTreeNodeBase *lhs, RBNodeColor rhs) noexcept {
   return rhs == (lhs == nullptr ? RBNodeColor::black : lhs->m_color);
 }
 
-bool operator!=(RBTreeNodeBase *lhs, RBNodeColor rhs) {
+bool operator!=(RBTreeNodeBase *lhs, RBNodeColor rhs) noexcept {
   return !(lhs == rhs);
 }
 
@@ -36,7 +36,7 @@ struct RBTreeNode : public RBTreeNodeBase {
 };
 
 template<typename NodePtrType>
-NodePtrType RBTreeIncrement(NodePtrType node) {
+NodePtrType RBTreeIncrement(NodePtrType node) noexcept {
   if (node->m_right) {
     node = node->m_right;
     while (node->m_left) {
@@ -54,7 +54,7 @@ NodePtrType RBTreeIncrement(NodePtrType node) {
 }
 
 template<typename NodePtrType>
-NodePtrType RBTreeDecrement(NodePtrType node) {
+NodePtrType RBTreeDecrement(NodePtrType node) noexcept {
   if (node == RBNodeColor::red &&
       node->m_parent->m_parent == node) {
     node = node->m_right;
@@ -322,7 +322,7 @@ class RBTree {
     return count_keys;
   }
 
-  std::pair<iterator,iterator> equal_range(const_reference key) {
+  std::pair<iterator,iterator> equal_range(const_reference key) noexcept {
     for (auto first = begin(); first != end();++first) {
       if (equal(*first,key)) {
         auto second = first;
@@ -334,7 +334,7 @@ class RBTree {
     return std::make_pair<iterator, iterator>(iterator(end()), iterator(end()));
   }
 
-  iterator lower_bound(const_reference key) {
+  iterator lower_bound(const_reference key) noexcept {
     for(auto it = begin(); it != end(); ++it) {
       if (!m_compare(*it, key) || equal(*it,key)) {
         return it;
@@ -343,7 +343,7 @@ class RBTree {
     return end();
   }
 
-  iterator upper_bound(const_reference key) {
+  iterator upper_bound(const_reference key) noexcept {
     for(auto it = begin(); it != end(); ++it) {
       if (!m_compare(*it, key) && !equal(*it,key)) {
         return it;
@@ -357,14 +357,14 @@ class RBTree {
     return !m_compare(lhs, rhs) && !(m_compare(rhs,lhs));
   }
 
-  static BasePtr GetMinNode(BasePtr node) {
+  static BasePtr GetMinNode(BasePtr node) noexcept {
     while (node->m_left) {
       node = node->m_left;
     }
     return node;
   }
 
-  BasePtr GetNodeToDelete(BasePtr root, value_type data) {
+  BasePtr GetNodeToDelete(BasePtr root, value_type data) noexcept {
     if (root == nullptr) {
       return root;
     }
@@ -383,7 +383,7 @@ class RBTree {
     return GetNodeToDelete(root->m_right, root_data);
   }
 
-  void RotateRight(BasePtr node) {
+  void RotateRight(BasePtr node) noexcept {
     BasePtr left_child = node->m_left;
     node->m_left = left_child->m_right;
     if (node->m_left) {
@@ -401,7 +401,7 @@ class RBTree {
     node->m_parent = left_child;
   }
 
-  void RotateLeft(BasePtr node) {
+  void RotateLeft(BasePtr node) noexcept {
     BasePtr right_child = node->m_right;
     node->m_right = right_child->m_left;
     if (node->m_right) {
@@ -434,7 +434,7 @@ class RBTree {
     return std::make_pair(iterator(new_node), true);
   }
 
-  void InsertFixup(BasePtr new_node){
+  void InsertFixup(BasePtr new_node) noexcept {
     BasePtr uncle;
     while(new_node != m_root && new_node->m_parent == Color::red) {
       if(new_node->m_parent == new_node->m_parent->m_parent->m_left) {
@@ -474,7 +474,7 @@ class RBTree {
     m_root->m_color = Color::black;
   }
 
-  void DeleteFixup(BasePtr node) {
+  void DeleteFixup(BasePtr node) noexcept {
     if (node == nullptr) {
       return;
     }
@@ -570,7 +570,7 @@ class RBTree {
     }
   }
 
-  void DeleteTree(BasePtr node) noexcept {
+  void DeleteTree(BasePtr node) {
     if (!node) {
       return;
     }

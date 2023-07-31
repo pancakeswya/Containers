@@ -138,7 +138,6 @@ class map {
 
  private:
   tree m_tree{};
-
 };
 
 } //namespace s21

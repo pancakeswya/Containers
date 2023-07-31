@@ -117,7 +117,6 @@ class set {
 
  private:
   tree m_tree;
-
 };
 
 } // namespace s21
