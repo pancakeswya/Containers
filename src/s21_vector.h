@@ -129,12 +129,8 @@ class vector {
 
   template <typename... Args>
   iterator emplace(const_iterator pos, Args&&... args) {
-    auto offset = pos - begin();
-    if (storage_is_full()) {
-      grow_storage();
-    }
-    iterator new_pos = begin() + offset;
-    std::move(new_pos, end(), new_pos + 1);
+    auto offset = pos - cbegin();
+    iterator new_pos = make_gap(offset);
     m_allocator.construct(new_pos, std::forward<Args>(args)...);
     ++m_finish;
     return new_pos;
@@ -147,11 +143,7 @@ class vector {
 
   iterator insert(iterator pos, const_reference value) {
     auto offset = pos - begin();
-    if (storage_is_full()) {
-      grow_storage();
-    }
-    iterator new_pos = begin() + offset;
-    std::move(new_pos, end(), new_pos + 1);
+    iterator new_pos = make_gap(offset);
     m_allocator.construct(new_pos, value);
     ++m_finish;
     return new_pos;
@@ -205,6 +197,15 @@ class vector {
   }
 
  private:
+  iterator make_gap(size_type offset) {
+    if (storage_is_full()) {
+      grow_storage();
+    }
+    iterator new_pos = begin() + offset;
+    std::move(new_pos, end(), new_pos + 1);
+    return new_pos;
+  }
+
   bool storage_is_full() noexcept {
     return m_finish == m_capacity;
   }
