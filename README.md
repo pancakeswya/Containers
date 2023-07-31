@@ -1,2 +1,2 @@
 # Containers
-STL containers implementation
+STL containers implementation.
