@@ -9,14 +9,14 @@ namespace s21 {
 template<typename Key, typename Compare = std::less<Key>>
 class multiset {
  public:
-  using tree = RBTree<Key>;
-  using iterator = typename tree::iterator;
-  using const_iterator = typename tree::const_iterator;
-  using size_type = typename tree::size_type;
   using key_type = Key;
   using value_type = Key;
   using reference = Key&;
   using const_reference = const Key&;
+  using tree = RBTree<key_type, value_type, KeyGetters::identity<value_type>, Compare>;
+  using iterator = typename tree::iterator;
+  using const_iterator = typename tree::const_iterator;
+  using size_type = typename tree::size_type;
 
   multiset() = default;
 
@@ -28,17 +28,19 @@ class multiset {
 
   multiset(const multiset &other) noexcept : m_tree(other.m_tree) {}
 
-  multiset(multiset &&other) noexcept : m_tree(std::move(other)) {}
+  multiset(multiset &&other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~multiset() = default;
 
   multiset& operator=(multiset &&other)  noexcept {
-    *this = std::move(other);
+    tree tmp(std::move(other.m_tree));
+    m_tree.swap(tmp);
     return *this;
   }
 
   multiset& operator=(const multiset &other) {
-    *this = other;
+    tree tmp(other.m_tree);
+    m_tree.swap(tmp);
     return *this;
   }
 
@@ -109,7 +111,7 @@ class multiset {
   }
 
   bool contains(const Key& key) const noexcept {
-    return find(key) != end();
+    return m_tree.find(key) != m_tree.end();
   }
 
   iterator begin() noexcept {
@@ -120,11 +122,19 @@ class multiset {
     return m_tree.cbegin();
   }
 
+  const_iterator cbegin() const noexcept {
+    return m_tree.cbegin();
+  }
+
   iterator end() noexcept {
     return m_tree.end();
   }
 
   const_iterator end() const noexcept {
+    return m_tree.cend();
+  }
+
+  const_iterator cend() const noexcept {
     return m_tree.cend();
   }
 

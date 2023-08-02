@@ -27,6 +27,7 @@ struct ListNodeBase {
 template<typename Tp>
 struct ListNode : public ListNodeBase {
   Tp m_data;
+  ListNode() = default;
   ListNode(ListNodeBase* const prev, ListNodeBase* const next, const Tp& data)
     : ListNodeBase(prev, next), m_data(data) {}
 };
@@ -154,7 +155,7 @@ class list {
   using const_iterator = ListConstIterator<value_type>;
   using size_type = size_t;
 
-  list() : m_base(new ListNodeBase) {}
+  list() : m_base(new Node()) {}
 
   explicit list(size_type n) : list()  {
     for (;n != 0; --n) {
@@ -175,7 +176,7 @@ class list {
   }
 
   list(list&& other) noexcept : m_size(other.m_size), m_base(other.m_base) {
-    other.m_base->m_next = other.m_base->m_prev = other.m_base;
+    other.m_base = new Node();
     other.m_size = 0;
   }
 
@@ -300,7 +301,7 @@ class list {
   }
 
   const_reference back() const noexcept {
-    return *tail();
+    return *const_iterator(m_base->m_prev);
   }
 
   iterator insert(iterator pos, const_reference value) {
@@ -361,6 +362,7 @@ class list {
 
   void swap(list& other) noexcept {
     std::swap(m_base, other.m_base);
+    std::swap(m_size, other.m_size);
   }
 
   void push_back(const_reference value) {
@@ -369,6 +371,9 @@ class list {
   }
 
   iterator begin() noexcept {
+    if (!m_base) {
+      return iterator();
+    }
     return iterator(m_base->m_next);
   }
 

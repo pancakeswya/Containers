@@ -1,239 +1,195 @@
 #ifndef S21_CONTAINER_SRC_S21_TREE_H_
 #define S21_CONTAINER_SRC_S21_TREE_H_
 
-#include <memory>
+#include <limits>
 #include <utility>
 
 namespace s21 {
 
-enum class RBNodeColor : int8_t { red, black, doubleBlack};
+enum class RBTreeNodeColor : bool { kRed, kBlack };
 
 struct RBTreeNodeBase {
-  using BasePtr = RBTreeNodeBase*;
+  using ColorType = RBTreeNodeColor;
+  using BasePtr = RBTreeNodeBase *;
 
   RBTreeNodeBase() = default;
-  explicit RBTreeNodeBase(RBNodeColor color) noexcept : m_color(color) {}
+  explicit RBTreeNodeBase(ColorType color) : m_color(color) {}
 
-  RBNodeColor m_color{};
+  ColorType m_color{};
   BasePtr m_parent{};
   BasePtr m_left{};
   BasePtr m_right{};
 };
 
-bool operator==(RBTreeNodeBase *lhs, RBNodeColor rhs) noexcept {
-  return rhs == (lhs == nullptr ? RBNodeColor::black : lhs->m_color);
-}
-
-bool operator!=(RBTreeNodeBase *lhs, RBNodeColor rhs) noexcept {
-  return !(lhs == rhs);
-}
-
 template<typename Tp>
 struct RBTreeNode : public RBTreeNodeBase {
   Tp m_data;
-  explicit RBTreeNode(const Tp &data, RBNodeColor color = RBNodeColor::red) noexcept
-      : m_data(data), RBTreeNodeBase(color) {}
+
+  RBTreeNode() = default;
+  RBTreeNode(const RBTreeNode &other) : m_data(other.m_data), RBTreeNodeBase(other.m_color) {}
+  explicit RBTreeNode(const Tp &value) : m_data(value) {}
 };
 
-template<typename NodePtrType>
-NodePtrType RBTreeIncrement(NodePtrType node) noexcept {
-  if (node->m_right) {
-    node = node->m_right;
-    while (node->m_left) {
-      node = node->m_left;
-    }
-  } else {
-    NodePtrType tmp = node->m_parent;
-    while (tmp && node == tmp->m_right) {
-      node = tmp;
-      tmp = tmp->m_parent;
-    }
-    node = tmp;
-  }
-  return node;
-}
-
-template<typename NodePtrType>
-NodePtrType RBTreeDecrement(NodePtrType node) noexcept {
-  if (node == RBNodeColor::red &&
-      node->m_parent->m_parent == node) {
-    node = node->m_right;
-  } else if (node->m_left) {
-    NodePtrType tmp = node->m_left;
-    while (tmp->m_right) {
-      tmp = tmp->m_right;
-    }
-    node = tmp;
-  } else {
-    NodePtrType tmp = node->m_parent;
-    while (tmp && node == tmp->m_left) {
-      node = tmp;
-      tmp = tmp->m_parent;
-    }
-    node = tmp;
-  }
-  return node;
-}
-
-template<typename Tp>
-struct RBTreeIterator {
-  using value_type = Tp;
-  using reference = Tp&;
-  using pointer = Tp*;
-  using iterator_category = std::bidirectional_iterator_tag;
-  using difference_type = ptrdiff_t;
-  using Base_ptr = RBTreeNodeBase::BasePtr;
-  using NodePtr = RBTreeNode<Tp>*;
-  using Self = RBTreeIterator<Tp>;
-
-  explicit RBTreeIterator(Base_ptr node = nullptr) noexcept : m_current(node) {}
-
-  Self &operator++() noexcept {
-    m_current = RBTreeIncrement(m_current);
-    return *this;
-  }
-
-  Self operator++(int) noexcept {
-    Self tmp = *this;
-    m_current = RBTreeIncrement(m_current);
-    return tmp;
-  }
-
-  Self &operator--() noexcept {
-    m_current = RBTreeDecrement(m_current);
-    return *this;
-  }
-
-  Self operator--(int) noexcept {
-    Self tmp = *this;
-    m_current = RBTreeDecrement(m_current);
-    return tmp;
-  }
-
-  reference operator*() noexcept {
-    return static_cast<NodePtr>(m_current)->m_data;
-  }
-
-  pointer operator->() noexcept {
-    return &static_cast<NodePtr>(m_current)->m_data;
-  }
-
-  friend bool operator==(const Self &lhs, const Self &rhs) {
-    return lhs.m_current == rhs.m_current;
-  }
-
-  friend bool operator!=(const Self &lhs, const Self &rhs) {
-    return lhs.m_current != rhs.m_current;
-  }
-
- private:
-  Base_ptr m_current;
-};
-
-template<typename Tp>
-struct RBTreeConstIterator {
-  using value_type = Tp;
-  using reference = const Tp&;
-  using pointer = const Tp*;
-  using iterator_category = std::bidirectional_iterator_tag;
-  using difference_type = ptrdiff_t;
-  using ConstBasePtr = const RBTreeNodeBase*;
+struct RBTreeIteratorBase {
   using BasePtr = typename RBTreeNodeBase::BasePtr;
-  using ConstNodePtr = const RBTreeNode<Tp>*;
-  using Self = RBTreeConstIterator<Tp>;
-  using iterator = RBTreeIterator<Tp>;
+  using ColorType = typename RBTreeNodeBase::ColorType;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type = ptrdiff_t;
 
-  explicit RBTreeConstIterator(ConstBasePtr node = nullptr) noexcept
-      : m_current(node) {}
+  BasePtr node;
 
-  iterator const_cast_() {
-    return iterator(const_cast<BasePtr>(m_current));
+  explicit RBTreeIteratorBase(BasePtr other_node) : node(other_node) {}
+
+  void Increment() {
+    if (node->m_right) {
+      node = node->m_right;
+      while (node->m_left) {
+        node = node->m_left;
+      }
+    } else {
+      BasePtr tmp = node->m_parent;
+      while (node == tmp->m_right) {
+        node = tmp;
+        tmp = tmp->m_parent;
+      }
+      if (node->m_right != tmp) {
+        node = tmp;
+      }
+    }
   }
 
-  Self &operator++() noexcept {
-    m_current = RBTreeIncrement(m_current);
-    return *this;
+  void Decrement() {
+    if (node->m_color == ColorType::kRed &&
+        node->m_parent->m_parent == node) {
+      node = node->m_right;
+    } else if (node->m_left) {
+      BasePtr tmp = node->m_left;
+      while (tmp->m_right) {
+        tmp = tmp->m_right;
+      }
+      node = tmp;
+    } else {
+      BasePtr tmp = node->m_parent;
+      while (node == tmp->m_left) {
+        node = tmp;
+        tmp = tmp->m_parent;
+      }
+      node = tmp;
+    }
   }
-
-  Self operator++(int) noexcept {
-    Self tmp = *this;
-    m_current = RBTreeIncrement(m_current);
-    return tmp;
-  }
-
-  Self &operator--() noexcept {
-    m_current = RBTreeDecrement(m_current);
-    return *this;
-  }
-
-  Self operator--(int) noexcept {
-    Self tmp = *this;
-    m_current = RBTreeDecrement(m_current);
-    return tmp;
-  }
-
-  reference operator*() noexcept {
-    return static_cast<ConstNodePtr>(m_current)->m_data;
-  }
-
-  pointer operator->() noexcept {
-    return &static_cast<ConstNodePtr>(m_current)->m_data;
-  }
-
-  friend bool operator==(const Self &lhs, const Self &rhs) {
-    return lhs.m_current == rhs.m_current;
-  }
-
-  friend bool operator!=(const Self &lhs, const Self &rhs) {
-    return lhs.m_current != rhs.m_current;
-  }
-
- private:
-  ConstBasePtr m_current;
 };
 
-template<typename Tp, typename Compare = std::less<Tp>>
+template<typename Val, typename Ref, typename Ptr>
+struct RBTreeIterator : public RBTreeIteratorBase {
+  using value_type = Val;
+  using reference = Ref;
+  using pointer = Ptr;
+  using iterator = RBTreeIterator<Val, Val &, Val *>;
+  using const_iterator = RBTreeIterator<Val, const Val &, const Val *>;
+  using Self = RBTreeIterator<Val, Ref, Ptr>;
+  using LinkType = RBTreeNode<Val> *;
+
+  explicit RBTreeIterator(BasePtr ptr = nullptr) : RBTreeIteratorBase(ptr) {}
+
+  reference operator*() const { return static_cast<LinkType>(node)->m_data; }
+
+  pointer operator->() const { return &static_cast<LinkType>(node)->m_data; }
+
+  Self &operator++() {
+    Increment();
+    return *this;
+  }
+
+  Self operator++(int) {
+    Self tmp = *this;
+    Increment();
+    return tmp;
+  }
+
+  Self &operator--() {
+    Decrement();
+    return *this;
+  }
+
+  Self operator--(int) {
+    Self tmp = *this;
+    Decrement();
+    return tmp;
+  }
+};
+
+inline bool operator==(const RBTreeIteratorBase &rhs,
+                       const RBTreeIteratorBase &lhs) {
+  return rhs.node == lhs.node;
+}
+
+inline bool operator!=(const RBTreeIteratorBase &rhs,
+                       const RBTreeIteratorBase &lhs) {
+  return rhs.node != lhs.node;
+}
+
+namespace KeyGetters {
+
+template<class Tp>
+struct identity {
+  const Tp &operator()(const Tp &r) const { return r; }
+};
+
+template<class Pair>
+struct select_first {
+  const typename Pair::first_type &operator()(const Pair &p) const { return p.first; }
+};
+
+} // KeyGetters
+
+template<typename Key, typename Value, typename KeyOfValue, typename Compare>
 class RBTree {
  public:
-  using Color = RBNodeColor;
+  using key_type = Key;
+  using value_type = Value;
+  using pointer = Value *;
+  using const_pointer = const Value *;
+  using reference = Value &;
+  using const_reference = const Value &;
+  using Node = RBTreeNode<Value>;
+  using NodePtr = Node *;
   using BasePtr = typename RBTreeNodeBase::BasePtr;
-  using Node = RBTreeNode<Tp>;
-  using NodePtr = Node*;
-  using value_type = Tp;
-  using pointer = Tp*;
-  using reference = Tp&;
-  using const_reference = const Tp&;
-  using iterator = RBTreeIterator<Tp>;
-  using const_iterator = RBTreeConstIterator<Tp>;
+  using ColorType = typename RBTreeNodeBase::ColorType;
   using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  using iterator = RBTreeIterator<value_type, reference, pointer>;
+  using const_iterator = RBTreeIterator<value_type, const_reference, const_pointer>;
 
-  const_iterator cbegin() const noexcept { return const_iterator(GetMinNode(m_root)); }
+  RBTree() : m_base(new Node()) {
+    m_base->m_parent = nullptr;
+    m_base->m_left = m_base->m_right = m_base;
+  }
 
-  const_iterator cend() const noexcept { return const_iterator(); }
-
-  iterator begin() noexcept { return iterator(GetMinNode(m_root)); }
-
-  iterator end() noexcept { return iterator(); }
-
-  const_iterator begin() const noexcept { return const_iterator(GetMinNode(m_root)); }
-
-  const_iterator end() const noexcept { return const_iterator(); }
-
-  RBTree() = default;
-
-  RBTree(const RBTree& other)
-    : m_size(other.m_size) {
-    m_root = CopyTree(other.m_root);
+  RBTree(const RBTree &other)
+      : m_node_count(other.m_node_count), m_key_compare(other.m_key_compare), m_base(new Node()) {
+    m_base->m_color = ColorType::kRed;
+    if (!other.m_base->m_parent) {
+      m_base->m_parent = nullptr;
+      m_base->m_left = m_base->m_right = m_base;
+    } else {
+      m_base->m_parent = CopyTree(other.m_base->m_parent, m_base);
+      m_base->m_left = GetMinNode(m_base->m_parent);
+      m_base->m_right = GetMaxNode(m_base->m_parent);
+    }
   }
 
   RBTree(RBTree &&other) noexcept
-    : m_root(other.m_root), m_size(other.m_size) {
-    other.m_root = nullptr;
+      : m_node_count(other.m_node_count), m_key_compare(other.m_key_compare), m_base(other.m_base) {
+    other.m_base = nullptr;
+    other.m_node_count = 0;
   }
 
-  ~RBTree() { DeleteTree(m_root); }
+  ~RBTree() {
+    clear();
+    delete m_base;
+  }
 
-  RBTree& operator=(const RBTree& other) {
+  RBTree &operator=(const RBTree &other) {
     if (this != &other) {
       RBTree tmp(other);
       swap(tmp);
@@ -241,179 +197,248 @@ class RBTree {
     return *this;
   }
 
-  RBTree& operator=(RBTree&& other) noexcept {
-    RBTree tmp(std::move);
+  RBTree &operator=(RBTree &&other) noexcept {
+    RBTree tmp(std::move(other));
     if (this != &other) {
       swap(tmp);
     }
     return *this;
   }
 
-  iterator find(const value_type& key) noexcept {
-    return iterator(FindBST(m_root,key));
-  }
-
-  const_iterator find(const value_type& key) const noexcept {
-    return const_iterator(FindBST(m_root,key));
-  }
-
-  size_type size() const noexcept {
-    return m_size;
-  }
-
-  size_type max_size() const noexcept {
-    return std::allocator<Node>().max_size();
-  }
-
-  void swap(RBTree& other) noexcept {
-    BasePtr tmp = other.m_root;
-    other.m_root = m_root;
-    m_root = tmp;
-  }
-
   void clear() {
-    DeleteTree(m_root);
+    if (m_node_count != 0) {
+      DeleteTree(m_base->m_parent);
+      m_base->m_parent = nullptr;
+      m_base->m_left = m_base->m_right = m_base;
+      m_node_count = 0;
+    }
   }
 
-  bool empty() const noexcept {
-    return (m_root == nullptr);
+  void swap(RBTree &other) noexcept {
+    std::swap(other.m_base, m_base);
+    std::swap(other.m_node_count, m_node_count);
+    std::swap(other.m_key_compare, m_key_compare);
   }
 
-  void erase(value_type data) {
-    BasePtr nodeToDelete = GetNodeToDelete(m_root, data);
-    DeleteFixup(nodeToDelete);
+  iterator begin() noexcept { return iterator(m_base->m_left); }
+
+  const_iterator begin() const noexcept { return const_iterator(m_base->m_left); }
+
+  const_iterator cbegin() const { return const_iterator(m_base->m_left); }
+
+  iterator end() noexcept { return iterator(m_base); }
+
+  const_iterator end() const noexcept { return const_iterator(m_base); }
+
+  const_iterator cend() const { return const_iterator(m_base); }
+
+  bool empty() const noexcept { return m_node_count == 0; }
+
+  size_type size() const noexcept { return m_node_count; }
+
+  size_type max_size() const noexcept { return std::numeric_limits<size_type>::max()/2/sizeof(Node); }
+
+  iterator find(const Key &key) noexcept {
+    return iterator(m_find(key));
   }
 
-  std::pair<iterator, bool> insert_unique(const_reference data) {
-      BasePtr current_node = m_root;
-      BasePtr parent = nullptr;
-      while(current_node) {
-        parent = current_node;
-        value_type curr_data = static_cast<NodePtr>(current_node)->m_data;
-        if(m_compare(data,curr_data)) {
-          current_node = current_node->m_left;
-        } else if (m_compare(curr_data, data)) {
-          current_node = current_node->m_right;
-        } else {
-          return std::make_pair(iterator(current_node), false);
-        }
-      }
-      return m_insert(data, parent);
+  const_iterator find(const Key &key) const noexcept {
+    return const_iterator(m_find(key));
   }
 
-  std::pair<iterator, bool> insert_equal(const_reference data) {
-    BasePtr current_node = m_root;
-    BasePtr parent = nullptr;
-    while(current_node) {
-      parent = current_node;
-      value_type curr_data = static_cast<NodePtr>(current_node)->m_data;
-      if(m_compare(data,curr_data)) {
-        current_node = current_node->m_left;
+  std::pair<iterator, iterator> equal_range(const Key &key) noexcept {
+    return std::make_pair(lower_bound(key), upper_bound(key));
+  }
+
+  std::pair<const_iterator, const_iterator> equal_range(const Key &key) const noexcept {
+    return std::make_pair(lower_bound(key), upper_bound(key));
+  }
+
+  iterator lower_bound(const Key &key) noexcept {
+    return iterator(m_low_bound(key));
+  }
+
+  const_iterator lower_bound(const Key &key) const noexcept {
+    return const_iterator(m_low_bound(key));
+  }
+
+  iterator upper_bound(const Key &key) noexcept {
+    return iterator(m_up_bound(key));
+  }
+
+  const_iterator upper_bound(const Key &key) const noexcept {
+    return const_iterator(m_up_bound(key));
+  }
+
+  size_type count(const Key &key) const noexcept {
+    std::pair<const_iterator, const_iterator> r_pair = equal_range(key);
+    size_type n_nodes = 0;
+    for (; r_pair.first != r_pair.second; ++r_pair.first, ++n_nodes);
+    return n_nodes;
+  }
+
+  std::pair<iterator, bool> insert_unique(const Value &val) {
+    BasePtr curr_node = m_base->m_parent, prev_node = m_base;
+    bool cmp = true;
+    while (curr_node) {
+      prev_node = curr_node;
+      cmp = m_key_compare(KeyOfValue()(val), GetKey(curr_node));
+      curr_node = cmp ? curr_node->m_left : curr_node->m_right;
+    }
+    auto it = iterator(prev_node);
+    if (cmp) {
+      if (it == begin()) {
+        return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
       } else {
-        current_node = current_node->m_right;
+        --it;
       }
     }
-    return m_insert(data, parent);
+    if (m_key_compare(GetKey(it.node), KeyOfValue()(val))) {
+      return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
+    }
+    return std::pair<iterator, bool>(it, false);
   }
 
-  size_type count(const_reference key) const noexcept {
-    size_type count_keys = 0;
-    for(auto &i : *this) {
-      if (equal(i, key)) {
-        ++count_keys;
-      }
+  std::pair<iterator, bool> insert_equal(const Value &val) {
+    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    while (curr_node) {
+      prev_node = curr_node;
+      curr_node = m_key_compare(KeyOfValue()(val), GetKey(curr_node)) ?
+                  curr_node->m_left : curr_node->m_right;
     }
-    return count_keys;
+    return std::make_pair(m_insert(curr_node, prev_node, val), true);
   }
 
-  std::pair<iterator,iterator> equal_range(const_reference key) noexcept {
-    for (auto first = begin(); first != end();++first) {
-      if (equal(*first,key)) {
-        auto second = first;
-        for(;equal(*second,key); ++second)
-          ;
-        return std::pair<iterator,iterator>(first, second);
-      }
-    }
-    return std::make_pair<iterator, iterator>(iterator(end()), iterator(end()));
+  void erase(iterator position) {
+    auto node_to_delete = EraseRebalance(position.node);
+    delete node_to_delete;
+    --m_node_count;
   }
 
-  iterator lower_bound(const_reference key) noexcept {
-    for(auto it = begin(); it != end(); ++it) {
-      if (!m_compare(*it, key) || equal(*it,key)) {
-        return it;
+  void erase(const Key &key) {
+    std::pair<iterator, iterator> r_pair = equal_range(key);
+    if (r_pair.first == begin() && r_pair.second == end()) {
+      clear();
+    } else {
+      while (r_pair.first != r_pair.second) {
+        erase(r_pair.first++);
       }
     }
-    return end();
-  }
-
-  iterator upper_bound(const_reference key) noexcept {
-    for(auto it = begin(); it != end(); ++it) {
-      if (!m_compare(*it, key) && !equal(*it,key)) {
-        return it;
-      }
-    }
-    return end();
   }
 
  protected:
-  bool equal(const_reference lhs, const_reference rhs) const noexcept {
-    return !m_compare(lhs, rhs) && !(m_compare(rhs,lhs));
+  static const Key &GetKey(BasePtr node) { return KeyOfValue()(static_cast<NodePtr>(node)->m_data); }
+
+  static BasePtr GetMinNode(BasePtr root) {
+    while (root->m_left) {
+      root = root->m_left;
+    }
+    return root;
+  }
+  static BasePtr GetMaxNode(BasePtr root) {
+    while (root->m_right) {
+      root = root->m_right;
+    }
+    return root;
   }
 
-  static BasePtr GetMinNode(BasePtr node) noexcept {
-    while (node->m_left) {
-      node = node->m_left;
+  static void DeleteTree(BasePtr root) {
+    while (root) {
+      DeleteTree(root->m_right);
+      BasePtr left = root->m_left;
+      delete root;
+      root = left;
     }
-    return node;
   }
 
-  BasePtr GetNodeToDelete(BasePtr root, value_type data) noexcept {
-    if (root == nullptr) {
-      return root;
+  static NodePtr CopyTree(BasePtr root, BasePtr head) {
+    auto top = new Node(*static_cast<NodePtr>(root));
+    top->m_parent = head;
+    if (root->m_right) {
+      top->m_right = CopyTree(root->m_right, top);
     }
-    reference root_data = static_cast<NodePtr>(root)->m_data;
-    if (m_compare(data,root_data)) {
-      return GetNodeToDelete(root->m_left, data);
+    head = top;
+    root = root->m_left;
+    while (root) {
+      auto copy = new Node(*static_cast<NodePtr>(root));
+      head->m_left = copy;
+      copy->m_parent = head;
+      if (root->m_right) {
+        copy->m_right = CopyTree(root->m_right, copy);
+      }
+      head = copy;
+      root = root->m_left;
     }
-    if (m_compare(root_data, data)) {
-      return GetNodeToDelete(root->m_right, data);
-    }
-    if (!root->m_left || !root->m_right) {
-      return root;
-    }
-    BasePtr temp = GetMinNode(root->m_right);
-    root_data = static_cast<NodePtr>(temp)->m_data;
-    return GetNodeToDelete(root->m_right, root_data);
+    return top;
   }
 
-  void RotateRight(BasePtr node) noexcept {
-    BasePtr left_child = node->m_left;
-    node->m_left = left_child->m_right;
-    if (node->m_left) {
-      node->m_left->m_parent = node;
+  BasePtr m_up_bound(const Key &key) const noexcept {
+    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    while (curr_node) {
+      if (m_key_compare(key, GetKey(curr_node))) {
+        prev_node = curr_node;
+        curr_node = curr_node->m_left;
+      } else {
+        curr_node = curr_node->m_right;
+      }
     }
-    left_child->m_parent = node->m_parent;
-    if (!node->m_parent) {
-      m_root = left_child;
-    } else if (node == node->m_parent->m_right) {
-      node->m_parent->m_right = left_child;
+    return prev_node;
+  }
+
+  BasePtr m_low_bound(const Key &key) const noexcept {
+    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    while (curr_node) {
+      if (!m_key_compare(GetKey(curr_node), key)) {
+        prev_node = curr_node;
+        curr_node = curr_node->m_left;
+      } else {
+        curr_node = curr_node->m_right;
+      }
+    }
+    return prev_node;
+  }
+
+  BasePtr m_find(const Key &key) const noexcept {
+    BasePtr found_node = m_low_bound(key);
+    if (found_node == m_base || m_key_compare(key, GetKey(found_node))) {
+      return m_base;
+    }
+    return found_node;
+  }
+
+  iterator m_insert(BasePtr curr_node, BasePtr prev_node, const Value &val) {
+    auto new_node = new Node(val);
+    if (prev_node == m_base || curr_node ||
+        m_key_compare(KeyOfValue()(val), GetKey(prev_node))) {
+      prev_node->m_left = new_node;
+      if (prev_node == m_base) {
+        m_base->m_parent = new_node;
+        m_base->m_right = new_node;
+      } else if (prev_node == m_base->m_left) {
+        m_base->m_left = new_node;
+      }
     } else {
-      node->m_parent->m_left = left_child;
+      prev_node->m_right = new_node;
+      if (prev_node == m_base->m_right) {
+        m_base->m_right = new_node;
+      }
     }
-    left_child->m_right = node;
-    node->m_parent = left_child;
+    new_node->m_parent = prev_node;
+    new_node->m_left = new_node->m_right = nullptr;
+    InsertRebalance(new_node);
+    ++m_node_count;
+    return iterator(new_node);
   }
 
-  void RotateLeft(BasePtr node) noexcept {
+  void RotateLeft(BasePtr node) {
     BasePtr right_child = node->m_right;
     node->m_right = right_child->m_left;
-    if (node->m_right) {
-      node->m_right->m_parent = node;
+    if (right_child->m_left) {
+      right_child->m_left->m_parent = node;
     }
     right_child->m_parent = node->m_parent;
-    if (!node->m_parent) {
-      m_root = right_child;
+    if (node == m_base->m_parent) {
+      m_base->m_parent = right_child;
     } else if (node == node->m_parent->m_left) {
       node->m_parent->m_left = right_child;
     } else {
@@ -423,199 +448,207 @@ class RBTree {
     node->m_parent = right_child;
   }
 
-  std::pair<iterator, bool> m_insert(const_reference data, BasePtr parent) {
-    auto new_node = new Node(data);
-    new_node->m_parent = parent;
-    if(!parent) {
-      m_root = new_node;
-    } else if(m_compare(data, static_cast<NodePtr>(parent)->m_data)) {
-      parent->m_left = new_node;
+  void RotateRight(BasePtr node) {
+    BasePtr left_child = node->m_left;
+    node->m_left = left_child->m_right;
+    if (left_child->m_right) {
+      left_child->m_right->m_parent = node;
+    }
+    left_child->m_parent = node->m_parent;
+    if (node == m_base->m_parent) {
+      m_base->m_parent = left_child;
+    } else if (node == node->m_parent->m_right) {
+      node->m_parent->m_right = left_child;
     } else {
-      parent->m_right = new_node;
+      node->m_parent->m_left = left_child;
     }
-    InsertFixup(new_node);
-    ++m_size;
-    return std::make_pair(iterator(new_node), true);
+    left_child->m_right = node;
+    node->m_parent = left_child;
   }
 
-  void InsertFixup(BasePtr new_node) noexcept {
-    BasePtr uncle;
-    while(new_node != m_root && new_node->m_parent == Color::red) {
-      if(new_node->m_parent == new_node->m_parent->m_parent->m_left) {
-        uncle = new_node->m_parent->m_parent->m_right;
-        if(uncle == Color::red) {
-          new_node->m_parent->m_color = Color::black;
-          uncle->m_color = Color::black;
-          new_node->m_parent->m_parent->m_color = Color::red;
-          new_node = new_node->m_parent->m_parent;
+  void InsertRebalance(BasePtr node) {
+    node->m_color = ColorType::kRed;
+    while (node != m_base->m_parent && node->m_parent->m_color == ColorType::kRed) {
+      BasePtr uncle;
+      if (node->m_parent == node->m_parent->m_parent->m_left) {
+        uncle = node->m_parent->m_parent->m_right;
+        if (uncle && uncle->m_color == ColorType::kRed) {
+          node->m_parent->m_color = ColorType::kBlack;
+          uncle->m_color = ColorType::kBlack;
+          node->m_parent->m_parent->m_color = ColorType::kRed;
+          node = node->m_parent->m_parent;
         } else {
-          if(new_node == new_node->m_parent->m_right) {
-            new_node = new_node->m_parent;
-            RotateLeft(new_node);
+          if (node == node->m_parent->m_right) {
+            node = node->m_parent;
+            RotateLeft(node);
           }
-          new_node->m_parent->m_color = Color::black;
-          new_node->m_parent->m_parent->m_color = Color::red;
-          RotateRight(new_node->m_parent->m_parent);
+          node->m_parent->m_color = ColorType::kBlack;
+          node->m_parent->m_parent->m_color = ColorType::kRed;
+          RotateRight(node->m_parent->m_parent);
         }
       } else {
-        uncle = new_node->m_parent->m_parent->m_left;
-        if(uncle == Color::red) {
-          new_node->m_parent->m_color = Color::black;
-          uncle->m_color = Color::black;
-          new_node->m_parent->m_parent->m_color = Color::red;
-          new_node = new_node->m_parent->m_parent;
+        uncle = node->m_parent->m_parent->m_left;
+        if (uncle && uncle->m_color == ColorType::kRed) {
+          node->m_parent->m_color = ColorType::kBlack;
+          uncle->m_color = ColorType::kBlack;
+          node->m_parent->m_parent->m_color = ColorType::kRed;
+          node = node->m_parent->m_parent;
         } else {
-          if(new_node == new_node->m_parent->m_left) {
-            new_node = new_node->m_parent;
-            RotateRight(new_node);
+          if (node == node->m_parent->m_left) {
+            node = node->m_parent;
+            RotateRight(node);
           }
-          new_node->m_parent->m_color = Color::black;
-          new_node->m_parent->m_parent->m_color = Color::red;
-          RotateLeft(new_node->m_parent->m_parent);
+          node->m_parent->m_color = ColorType::kBlack;
+          node->m_parent->m_parent->m_color = ColorType::kRed;
+          RotateLeft(node->m_parent->m_parent);
         }
       }
     }
-    m_root->m_color = Color::black;
+    m_base->m_parent->m_color = ColorType::kBlack;
   }
 
-  void DeleteFixup(BasePtr node) noexcept {
-    if (node == nullptr) {
-      return;
-    }
-    if (node == m_root) {
-      m_root = nullptr;
-      return;
-    }
-
-    if (node == Color::red || node->m_left == Color::red || node->m_right == Color::red) {
-      BasePtr child = node->m_left ? node->m_left : node->m_right;
-      if (node == node->m_parent->m_left) {
-        node->m_parent->m_left = child;
-      } else {
-        node->m_parent->m_right = child;
-      }
-      if (child) {
-        child->m_parent = node->m_parent;
-        child->m_color = Color::black;
-      }
-      delete node;
+  BasePtr EraseRebalance(BasePtr node) {
+    BasePtr curr_node = node, prev_node = nullptr, pv_parent = nullptr;
+    if (!curr_node->m_left) {
+      prev_node = curr_node->m_right;
     } else {
-      BasePtr sibling, parent, ptr = node;
-      ptr->m_color = Color::doubleBlack;
-      while (ptr != m_root && ptr == Color::doubleBlack) {
-        parent = ptr->m_parent;
-        if (ptr == parent->m_left) {
-          sibling = parent->m_right;
-          if (sibling == Color::red) {
-            sibling->m_color = Color::black;
-            parent->m_color = Color::red;
-            RotateLeft(parent);
+      if (!curr_node->m_right) {
+        prev_node = curr_node->m_left;
+      } else {
+        curr_node = GetMinNode(curr_node->m_right);
+        prev_node = curr_node->m_right;
+      }
+    }
+    if (curr_node != node) {
+      node->m_left->m_parent = curr_node;
+      curr_node->m_left = node->m_left;
+      if (curr_node != node->m_right) {
+        pv_parent = curr_node->m_parent;
+        if (prev_node) {
+          curr_node->m_parent = curr_node->m_parent;
+        }
+        curr_node->m_parent->m_left = prev_node;
+        curr_node->m_right = node->m_right;
+        node->m_right->m_parent = curr_node;
+      } else {
+        pv_parent = curr_node;
+      }
+      if (m_base->m_parent == node) {
+        m_base->m_parent = curr_node;
+      } else if (node->m_parent->m_left == node) {
+        node->m_parent->m_left = curr_node;
+      } else {
+        node->m_parent->m_right = curr_node;
+      }
+      curr_node->m_parent = node->m_parent;
+      std::swap(curr_node->m_color, node->m_color);
+      curr_node = node;
+    } else {
+      pv_parent = curr_node->m_parent;
+      if (prev_node) {
+        prev_node->m_parent = curr_node->m_parent;
+      }
+      if (m_base->m_parent == node) {
+        m_base->m_parent = prev_node;
+      } else {
+        if (node->m_parent->m_left == node) {
+          node->m_parent->m_left = prev_node;
+        } else {
+          node->m_parent->m_right = prev_node;
+        }
+      }
+      if (m_base->m_left == node) {
+        if (!node->m_right) {
+          m_base->m_left = node->m_parent;
+        } else {
+          m_base->m_left = GetMinNode(prev_node);
+        }
+      }
+      if (m_base->m_right == node) {
+        if (!node->m_left) {
+          m_base->m_right = node->m_parent;
+        } else {
+          m_base->m_right = GetMaxNode(prev_node);
+        }
+      }
+    }
+    if (curr_node->m_color != ColorType::kRed) {
+      while (prev_node != m_base->m_parent &&
+          (!prev_node || prev_node->m_color == ColorType::kBlack)) {
+        BasePtr uncle;
+        if (prev_node == pv_parent->m_left) {
+          uncle = pv_parent->m_right;
+          if (uncle->m_color == ColorType::kRed) {
+            uncle->m_color = ColorType::kBlack;
+            pv_parent->m_color = ColorType::kRed;
+            RotateLeft(pv_parent);
+            uncle = pv_parent->m_right;
+          }
+          if ((!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack) &&
+              (!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack)) {
+            uncle->m_color = ColorType::kRed;
+            prev_node = pv_parent;
+            pv_parent = pv_parent->m_parent;
           } else {
-            if (sibling->m_left == Color::black && sibling->m_right == Color::black) {
-              sibling->m_color = Color::red;
-              if (parent == Color::red) {
-                parent->m_color = Color::black;
-              } else {
-                parent->m_color = Color::doubleBlack;
+            if (!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack) {
+              if (uncle->m_left) {
+                uncle->m_left->m_color = ColorType::kBlack;
               }
-              ptr = parent;
-            } else {
-              if (sibling->m_right == Color::black) {
-                sibling->m_left->m_color = Color::black;
-                sibling->m_color = Color::red;
-                RotateRight(sibling);
-                sibling = parent->m_right;
-              }
-              sibling->m_color = parent->m_color;
-              parent->m_color = Color::black;
-              sibling->m_right->m_color = Color::black;
-              RotateLeft(parent);
-              break;
+              uncle->m_color = ColorType::kRed;
+              RotateRight(uncle);
+              uncle = pv_parent->m_right;
             }
+            uncle->m_color = pv_parent->m_color;
+            pv_parent->m_color = ColorType::kBlack;
+            if (uncle->m_right) {
+              uncle->m_right->m_color = ColorType::kBlack;
+            }
+            RotateLeft(pv_parent);
+            break;
           }
         } else {
-          sibling = parent->m_left;
-          if (sibling == Color::red) {
-            sibling->m_color = Color::black;
-            parent->m_color = Color::red;
-            RotateRight(parent);
+          uncle = pv_parent->m_left;
+          if (uncle->m_color == ColorType::kRed) {
+            uncle->m_color = ColorType::kBlack;
+            pv_parent->m_color = ColorType::kRed;
+            RotateRight(pv_parent);
+            uncle = pv_parent->m_left;
+          }
+          if ((!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack) &&
+              (!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack)) {
+            uncle->m_color = ColorType::kRed;
+            prev_node = pv_parent;
+            pv_parent = pv_parent->m_parent;
           } else {
-            if (sibling->m_left == Color::black && sibling->m_right == Color::black) {
-              sibling->m_color = Color::red;;
-              if (parent == Color::red) {
-                parent->m_color = Color::black;
-              } else {
-                parent->m_color = Color::doubleBlack;
+            if (!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack) {
+              if (uncle->m_right) {
+                uncle->m_right->m_color = ColorType::kBlack;
               }
-              ptr = parent;
-            } else {
-              if (sibling->m_left == Color::black) {
-                sibling->m_right->m_color = Color::black;
-                sibling->m_color = Color::red;
-                RotateLeft(sibling);
-                sibling = parent->m_left;
-              }
-              sibling->m_color = parent->m_color;
-              parent->m_color = Color::black;
-              sibling->m_left->m_color = Color::black;
-              RotateRight(parent);
-              break;
+              uncle->m_color = ColorType::kRed;
+              RotateLeft(uncle);
+              uncle = pv_parent->m_left;
             }
+            uncle->m_color = pv_parent->m_color;
+            pv_parent->m_color = ColorType::kBlack;
+            if (uncle->m_left) {
+              uncle->m_left->m_color = ColorType::kBlack;
+            }
+            RotateRight(pv_parent);
+            break;
           }
         }
       }
-      if (node == node->m_parent->m_left) {
-        node->m_parent->m_left = nullptr;
-      } else {
-        node->m_parent->m_right = nullptr;
+      if (prev_node) {
+        prev_node->m_color = ColorType::kBlack;
       }
-      delete node;
-      m_root->m_color = Color::black;
     }
-  }
-
-  void DeleteTree(BasePtr node) {
-    if (!node) {
-      return;
-    }
-    DeleteTree(node->m_left);
-    DeleteTree(node->m_right);
-    delete node;
-  }
-
-  BasePtr FindBST(BasePtr root, value_type key) const noexcept {
-    if (!root) {
-      return nullptr;
-    }
-    value_type val = static_cast<NodePtr>(root)->m_data;
-    if (m_compare(val, key)) {
-      return FindBST(root->m_right, key);
-    } else if(m_compare(key,val)) {
-      return FindBST(root->m_left, key);
-    }
-    return root;
-  }
-
-  static BasePtr CopyTree(BasePtr root) noexcept {
-    if (!root) {
-      return nullptr;
-    }
-    BasePtr new_root = new Node(static_cast<NodePtr>(root)->m_data, root->m_color);
-    new_root->m_left = CopyTree(root->m_left);
-    new_root->m_right = CopyTree(root->m_right);
-    if (new_root->m_left) {
-      new_root->m_left->m_parent = new_root;
-    }
-    if (new_root->m_right) {
-      new_root->m_right->m_parent = new_root;
-    }
-    return new_root;
+    return curr_node;
   }
 
  private:
-  BasePtr m_root{};
-  Compare m_compare;
-  size_type m_size{};
+  size_type m_node_count{};
+  Compare m_key_compare;
+  BasePtr m_base;
 };
 
 } // namespace s21

@@ -2,6 +2,7 @@
 #define S21_CONTAINER_SRC_S21_MAP_H_
 
 #include "s21_tree.h"
+#include "s21_vector.h"
 
 namespace s21 {
 
@@ -10,57 +11,51 @@ class map {
  public:
   using key_type = Key;
   using mapped_type = Tp;
-  using value_type = std::pair<const key_type, mapped_type>;
+  using value_type = std::pair<key_type, mapped_type>;
   using reference = value_type&;
   using const_reference = const value_type&;
-
-  struct key_compare {
-    bool operator()(const_reference lhs, const_reference rhs) const noexcept {
-      return cmp(lhs.first, rhs.first);
-    }
-    Compare cmp;
-  };
-
-  typedef RBTree<value_type, key_compare>      tree;
-  typedef typename tree::iterator                iterator;
-  typedef typename tree::const_iterator          const_iterator;
-  typedef typename tree::size_type               size_type;
+  using tree = RBTree<key_type, value_type, KeyGetters::select_first<value_type>, Compare>;
+  using iterator = typename tree::iterator;
+  using const_iterator = typename tree::const_iterator;
+  using size_type = typename tree::size_type;
 
   map() = default;
 
   map(std::initializer_list<value_type> const &items) {
     for(auto &item : items) {
-      m_tree.insert(item);
+      m_tree.insert_unique(item);
     }
   }
 
   map(const map &other) noexcept : m_tree(other.m_tree) {}
 
-  map(map &&other) noexcept : m_tree(std::move(other)) {}
+  map(map &&other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~map() = default;
 
   map& operator=(map &&other)  noexcept {
-    *this = std::move(other);
+    m_tree = std::move(other.m_tree);
     return *this;
   }
 
   map& operator=(const map &other) {
-    *this = other;
+    m_tree = other.m_tree;
     return *this;
   }
 
   Tp& at(const Key& key) {
-    (*this)[key];
+    iterator it = m_tree.lower_bound(key);
+    if (it == end() || Compare()(key, (*it).first)) {
+      throw std::out_of_range("Missing key in map");
+    }
+    return (*it).second;
   }
 
   Tp& operator[](const Key& key) {
-    for(auto it = begin(); it != end();++it) {
-      if ((*it).first == key) {
-        return (*it).second;
-      }
+    iterator it = m_tree.lower_bound(key);
+    if (it == end() || Compare()(key, (*it).first)) {
+      return (*insert(value_type(key, mapped_type())).first).second;
     }
-    auto it = insert(value_type(key, Tp())).first;
     return (*it).second;
   }
 
@@ -81,11 +76,22 @@ class map {
   }
 
   std::pair<iterator, bool> insert(const value_type& value) {
-    return m_tree.insert(value);
+    return m_tree.insert_unique(value);
+  }
+
+  template <typename... Args>
+  vector<std::pair<iterator,bool>> insert_many(Args&&... args) {
+    vector<std::pair<iterator, bool>> inserted;
+    ([&]
+    {
+      auto ins_pair = insert(args);
+      inserted.push_back(ins_pair);
+    } (), ...);
+    return inserted;
   }
 
   void erase(iterator pos) {
-    m_tree.erase(*pos);
+    m_tree.erase((*pos).first);
   }
 
   void swap(map& other) noexcept {
@@ -93,31 +99,33 @@ class map {
   }
 
   void merge(map& other) {
-    for(auto &i : other.m_tree) {
-      m_tree.insert(i);
+    for(auto it = other.begin(); it != other.end(); ++it) {
+      auto pair_found = m_tree.insert_unique(*it);
+      if (pair_found.second) {
+        other.m_tree.erase(it);
+        if (other.empty()) {
+          break;
+        }
+      }
     }
-    other.clear();
   }
 
   std::pair<iterator, bool> insert(const Key& key, const Tp& obj) {
-    return m_tree.insert(value_type(key, obj));
+    return m_tree.insert_unique(value_type(key, obj));
   }
 
   std::pair<iterator, bool> insert_or_assign(const Key& key, const Tp& obj) {
-    auto it = m_tree.insert(value_type(key, obj));
-    if (!it.second) {
-      (*it.first).second = obj;
+    iterator it = m_tree.lower_bound(key);
+    if (it == end() || Compare()(key, (*it).first)) {
+      m_tree.insert_unique(value_type(key, obj));
+      return std::make_pair(it, true);
     }
-    return std::pair<iterator, bool>(it.first, true);
+    (*it).second = obj;
+    return std::pair<iterator, bool>(it, false);
   }
 
   bool contains(const Key& key) const noexcept {
-    for(auto it = begin(); it != end(); ++it) {
-      if ((*it).first == key) {
-        return true;
-      }
-    }
-    return false;
+    return m_tree.count(key) != 0;
   }
 
   iterator begin() noexcept {
@@ -128,11 +136,19 @@ class map {
     return m_tree.cbegin();
   }
 
+  const_iterator cbegin() const noexcept {
+    return m_tree.cbegin();
+  }
+
   iterator end() noexcept {
     return m_tree.end();
   }
 
   const_iterator end() const noexcept {
+    return m_tree.cend();
+  }
+
+  const_iterator cend() const noexcept {
     return m_tree.cend();
   }
 

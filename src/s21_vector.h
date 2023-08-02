@@ -67,6 +67,10 @@ class vector {
     return *this;
   }
 
+  const Tp* data() const noexcept {
+    return m_start;
+  }
+
   iterator begin() noexcept { return m_start; }
 
   const_iterator begin() const noexcept { return m_start; }
@@ -103,11 +107,16 @@ class vector {
     for(iterator p = begin(); p != end(); ++p) {
       m_allocator.destroy(p);
     }
-    m_finish = m_start = m_capacity = nullptr;
+    m_finish = m_start;
   }
 
   void reserve(size_type n) {
-    reallocate_storage(end(),n);
+    if (capacity() > max_size()) {
+      throw std::out_of_range("Invalid reserve size");
+    }
+    if (capacity() < n) {
+      reallocate_storage(end(), n);
+    }
   }
 
   reference at(size_type pos) {
@@ -117,7 +126,7 @@ class vector {
     return (*this)[pos];
   }
 
-  reference operator[](size_type pos) { return at(pos); }
+  reference operator[](size_type pos) { return *(m_start + pos); }
 
   reference front() { return *begin(); }
 
@@ -185,8 +194,8 @@ class vector {
   void erase(iterator pos) {
     if (pos + 1 != end()) {
       std::move(pos + 1, end(), pos);
-      pop_back();
     }
+    pop_back();
   }
 
   void swap(vector& other) noexcept {

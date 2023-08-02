@@ -12,36 +12,36 @@ namespace s21 {
 template<typename Key, typename Compare = std::less<Key>>
 class set {
  public:
-  using tree = RBTree<Key, Compare>;
-  using iterator = typename tree::iterator;
-  using const_iterator = typename tree::const_iterator;
-  using size_type = typename tree::size_type;
   using key_type = Key;
   using value_type = Key;
   using reference = Key&;
   using const_reference = const Key&;
+  using tree = RBTree<key_type, value_type, KeyGetters::identity<value_type>, Compare>;
+  using iterator = typename tree::iterator;
+  using const_iterator = typename tree::const_iterator;
+  using size_type = typename tree::size_type;
 
   set() = default;
 
   set(std::initializer_list<value_type> const &items) {
     for(auto &item : items) {
-      m_tree.insert(item);
+      m_tree.insert_unique(item);
     }
   }
 
   set(const set &other) noexcept : m_tree(other.m_tree) {}
 
-  set(set &&other) noexcept : m_tree(std::move(other)) {}
+  set(set &&other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~set() = default;
 
-  set& operator=(set &&other)  noexcept {
-    *this = std::move(other);
+  set& operator=(set &&other) noexcept {
+    m_tree = std::move(other.m_tree);
     return *this;
   }
 
   set& operator=(const set &other) {
-    *this = other;
+    m_tree = other.m_tree;
     return *this;
   }
 
@@ -86,7 +86,7 @@ class set {
 
   void merge(set& other) {
     for(auto &i : other.m_tree) {
-      m_tree.insert(i);
+      m_tree.insert_unique(i);
     }
     other.clear();
   }
@@ -107,11 +107,19 @@ class set {
     return m_tree.cbegin();
   }
 
+  const_iterator cbegin() const noexcept {
+    return m_tree.cbegin();
+  }
+
   iterator end() noexcept {
     return m_tree.end();
   }
 
   const_iterator end() const noexcept {
+    return m_tree.cend();
+  }
+
+  const_iterator cend() const noexcept {
     return m_tree.cend();
   }
 
