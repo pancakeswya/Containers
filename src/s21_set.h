@@ -85,10 +85,7 @@ class set {
   }
 
   void merge(set& other) {
-    for(auto &i : other.m_tree) {
-      m_tree.insert_unique(i);
-    }
-    other.clear();
+    m_tree.merge_unique(other.m_tree);
   }
 
   iterator find(const Key& key) noexcept {

@@ -84,10 +84,7 @@ class multiset {
   }
 
   void merge(multiset& other) {
-    for(auto &i : other.m_tree) {
-      m_tree.insert_equal(i);
-    }
-    other.clear();
+    m_tree.merge_equal(other.m_tree);
   }
 
   iterator find(const Key& key) noexcept {

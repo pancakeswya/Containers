@@ -54,7 +54,8 @@ class map {
   Tp& operator[](const Key& key) {
     iterator it = m_tree.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
-      return (*insert(value_type(key, mapped_type())).first).second;
+      auto ins_it = insert(value_type(key, mapped_type())).first;
+      return (*ins_it).second;
     }
     return (*it).second;
   }
@@ -99,15 +100,7 @@ class map {
   }
 
   void merge(map& other) {
-    for(auto it = other.begin(); it != other.end(); ++it) {
-      auto pair_found = m_tree.insert_unique(*it);
-      if (pair_found.second) {
-        other.m_tree.erase(it);
-        if (other.empty()) {
-          break;
-        }
-      }
-    }
+    m_tree.merge_unique(other.m_tree);
   }
 
   std::pair<iterator, bool> insert(const Key& key, const Tp& obj) {

@@ -26,7 +26,7 @@ struct RBTreeNode : public RBTreeNodeBase {
   Tp m_data;
 
   RBTreeNode() = default;
-  RBTreeNode(const RBTreeNode &other) : m_data(other.m_data), RBTreeNodeBase(other.m_color) {}
+  RBTreeNode(const RBTreeNode &other) : RBTreeNodeBase(other.m_color), m_data(other.m_data) {}
   explicit RBTreeNode(const Tp &value) : m_data(value) {}
 };
 
@@ -275,6 +275,27 @@ class RBTree {
     size_type n_nodes = 0;
     for (; r_pair.first != r_pair.second; ++r_pair.first, ++n_nodes);
     return n_nodes;
+  }
+
+  void merge_unique(RBTree& other) {
+    int i = 0;
+    iterator to_delete[other.size()];
+    for(auto it = other.begin(); it != other.end(); ++it) {
+      auto pair_found = insert_unique(*it);
+      if (pair_found.second) {
+        to_delete[i++] = it;
+      }
+    }
+    while(i) {
+      other.erase(to_delete[--i]);
+    }
+  }
+
+  void merge_equal(RBTree& other) {
+    for(auto &i : other) {
+      insert_equal(i);
+    }
+    other.clear();
   }
 
   std::pair<iterator, bool> insert_unique(const Value &val) {
