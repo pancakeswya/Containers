@@ -256,6 +256,7 @@ class vector {
   }
 
   void destroy_storage() {
+    clear();
     m_allocator.deallocate(m_start, m_capacity - m_start);
     m_start = m_finish = m_capacity = nullptr;
   }
