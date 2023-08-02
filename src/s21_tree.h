@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <utility>
+#include <iterator>
 
 namespace s21 {
 
@@ -84,8 +85,6 @@ struct RBTreeIterator : public RBTreeIteratorBase {
   using value_type = Val;
   using reference = Ref;
   using pointer = Ptr;
-  using iterator = RBTreeIterator<Val, Val&, Val*>;
-  using const_iterator = RBTreeIterator<Val, const Val&, const Val*>;
   using Self = RBTreeIterator<Val, Ref, Ptr>;
   using NodePtr = RBTreeNode<Val>*;
 

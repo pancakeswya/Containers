@@ -33,8 +33,7 @@ struct ListNode : public ListNodeBase {
 };
 
 template<typename Tp>
-class ListIterator {
- public:
+struct ListIterator {
   using Node = ListNode<Tp>;
   using difference_type = ptrdiff_t;
   using iterator_category = std::bidirectional_iterator_tag;
@@ -85,8 +84,7 @@ class ListIterator {
 };
 
 template<typename Tp>
-class ListConstIterator {
- public:
+struct ListConstIterator {
   using iterator = ListIterator<Tp>;
   using Node = const ListNode<Tp>;
   using difference_type = ptrdiff_t;
