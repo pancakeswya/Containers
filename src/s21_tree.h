@@ -147,12 +147,12 @@ class RBTree {
  public:
   using key_type = Key;
   using value_type = Value;
-  using pointer = Value *;
-  using const_pointer = const Value *;
-  using reference = Value &;
-  using const_reference = const Value &;
+  using pointer = Value*;
+  using const_pointer = const Value*;
+  using reference = Value&;
+  using const_reference = const Value&;
   using Node = RBTreeNode<Value>;
-  using NodePtr = Node *;
+  using NodePtr = Node*;
   using BasePtr = typename RBTreeNodeBase::BasePtr;
   using ColorType = typename RBTreeNodeBase::ColorType;
   using size_type = size_t;
