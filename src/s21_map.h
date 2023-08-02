@@ -21,29 +21,29 @@ class map {
 
   map() = default;
 
-  map(std::initializer_list<value_type> const &items) {
-    for(auto &item : items) {
+  map(std::initializer_list<value_type> const& items) {
+    for(auto& item : items) {
       m_tree.insert_unique(item);
     }
   }
 
-  map(const map &other) noexcept : m_tree(other.m_tree) {}
+  map(const map& other) noexcept : m_tree(other.m_tree) {}
 
-  map(map &&other) noexcept : m_tree(std::move(other.m_tree)) {}
+  map(map&& other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~map() = default;
 
-  map& operator=(map &&other)  noexcept {
+  map& operator=(map&& other)  noexcept {
     m_tree = std::move(other.m_tree);
     return *this;
   }
 
-  map& operator=(const map &other) {
+  map& operator=(const map& other) {
     m_tree = other.m_tree;
     return *this;
   }
 
-  Tp& at(const Key& key) {
+  mapped_type& at(const Key& key) {
     iterator it = m_tree.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       throw std::out_of_range("Missing key in map");
@@ -51,8 +51,25 @@ class map {
     return (*it).second;
   }
 
-  Tp& operator[](const Key& key) {
+  const mapped_type& at(const Key& key) const {
+    const_iterator it = m_tree.lower_bound(key);
+    if (it == end() || Compare()(key, (*it).first)) {
+      throw std::out_of_range("Missing key in map");
+    }
+    return (*it).second;
+  }
+
+  mapped_type& operator[](const Key& key) {
     iterator it = m_tree.lower_bound(key);
+    if (it == end() || Compare()(key, (*it).first)) {
+      auto ins_it = insert(value_type(key, mapped_type())).first;
+      return (*ins_it).second;
+    }
+    return (*it).second;
+  }
+
+  const mapped_type& operator[](const Key& key) const {
+    const_iterator it = m_tree.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       auto ins_it = insert(value_type(key, mapped_type())).first;
       return (*ins_it).second;

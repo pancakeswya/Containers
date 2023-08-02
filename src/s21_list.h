@@ -72,11 +72,11 @@ class ListIterator {
     return ret;
   }
 
-  friend bool operator==(const ListIterator& lhs, const ListIterator& rhs) {
+  friend bool operator==(const ListIterator& lhs, const ListIterator& rhs) noexcept {
     return lhs.m_node == rhs.m_node;
   }
 
-  friend bool operator!=(const ListIterator& lhs, const ListIterator& rhs) {
+  friend bool operator!=(const ListIterator& lhs, const ListIterator& rhs) noexcept {
     return lhs.m_node != rhs.m_node;
   }
 
@@ -131,11 +131,11 @@ class ListConstIterator {
     return ret;
   }
 
-  friend bool operator==(const ListConstIterator& lhs, const ListConstIterator& rhs) {
+  friend bool operator==(const ListConstIterator& lhs, const ListConstIterator& rhs) noexcept {
     return lhs.m_node == rhs.m_node;
   }
 
-  friend bool operator!=(const ListConstIterator& lhs, const ListConstIterator& rhs) {
+  friend bool operator!=(const ListConstIterator& lhs, const ListConstIterator& rhs) noexcept {
     return lhs.m_node != rhs.m_node;
   }
 
@@ -163,14 +163,14 @@ class list {
     }
   }
 
-  list(std::initializer_list<value_type> const &items) : list()  {
-    for (auto &item : items) {
+  list(std::initializer_list<value_type> const& items) : list()  {
+    for (auto& item : items) {
       push_back(item);
     }
   }
 
   list(const list& other) : list()  {
-    for (auto &val : other) {
+    for (auto& val : other) {
       push_back(val);
     }
   }
@@ -296,8 +296,16 @@ class list {
     }
   }
 
+  reference front() noexcept {
+    return *begin();
+  }
+
   const_reference front() const noexcept {
     return *begin();
+  }
+
+  reference back() noexcept {
+    return *iterator(m_base->m_prev);
   }
 
   const_reference back() const noexcept {

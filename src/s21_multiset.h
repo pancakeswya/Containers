@@ -20,27 +20,25 @@ class multiset {
 
   multiset() = default;
 
-  multiset(std::initializer_list<value_type> const &items) {
-    for(auto &item : items) {
+  multiset(std::initializer_list<value_type> const& items) {
+    for(auto& item : items) {
       insert(item);
     }
   }
 
-  multiset(const multiset &other) noexcept : m_tree(other.m_tree) {}
+  multiset(const multiset& other) noexcept : m_tree(other.m_tree) {}
 
-  multiset(multiset &&other) noexcept : m_tree(std::move(other.m_tree)) {}
+  multiset(multiset&& other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~multiset() = default;
 
-  multiset& operator=(multiset &&other)  noexcept {
-    tree tmp(std::move(other.m_tree));
-    m_tree.swap(tmp);
+  multiset& operator=(multiset&& other)  noexcept {
+    m_tree = std::move(other.m_tree);
     return *this;
   }
 
-  multiset& operator=(const multiset &other) {
-    tree tmp(other.m_tree);
-    m_tree.swap(tmp);
+  multiset& operator=(const multiset& other) {
+    m_tree = other.m_tree;
     return *this;
   }
 
@@ -91,6 +89,10 @@ class multiset {
     return m_tree.find(key);
   }
 
+  const_iterator find(const Key& key) const noexcept {
+    return m_tree.find(key);
+  }
+
   size_type count(const Key& key) const noexcept {
     return m_tree.count(key);
   }
@@ -103,7 +105,15 @@ class multiset {
     return m_tree.lower_bound(key);
   }
 
+  const_iterator lower_bound(const Key& key) const {
+    return m_tree.lower_bound(key);
+  }
+
   iterator upper_bound(const Key& key) {
+    return m_tree.upper_bound(key);
+  }
+
+  const_iterator upper_bound(const Key& key) const {
     return m_tree.upper_bound(key);
   }
 

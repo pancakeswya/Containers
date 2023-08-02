@@ -23,24 +23,24 @@ class set {
 
   set() = default;
 
-  set(std::initializer_list<value_type> const &items) {
-    for(auto &item : items) {
+  set(std::initializer_list<value_type> const& items) {
+    for(auto& item : items) {
       m_tree.insert_unique(item);
     }
   }
 
-  set(const set &other) noexcept : m_tree(other.m_tree) {}
+  set(const set& other) noexcept : m_tree(other.m_tree) {}
 
-  set(set &&other) noexcept : m_tree(std::move(other.m_tree)) {}
+  set(set&& other) noexcept : m_tree(std::move(other.m_tree)) {}
 
   ~set() = default;
 
-  set& operator=(set &&other) noexcept {
+  set& operator=(set&& other) noexcept {
     m_tree = std::move(other.m_tree);
     return *this;
   }
 
-  set& operator=(const set &other) {
+  set& operator=(const set& other) {
     m_tree = other.m_tree;
     return *this;
   }
@@ -89,6 +89,10 @@ class set {
   }
 
   iterator find(const Key& key) noexcept {
+    return m_tree.find(key);
+  }
+
+  const_iterator find(const Key& key) const noexcept {
     return m_tree.find(key);
   }
 

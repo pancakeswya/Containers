@@ -27,16 +27,16 @@ class vector {
     }
   }
 
-  vector(std::initializer_list<value_type> const &items) {
+  vector(std::initializer_list<value_type> const& items) {
     create_storage(items.size());
-    for (auto &item : items) {
+    for (auto& item : items) {
       m_allocator.construct(m_finish++, item);
     }
   }
 
   vector(const vector& other) {
     create_storage(other.capacity());
-    for (auto &val : other) {
+    for (auto& val : other) {
       m_allocator.construct(m_finish++, val);
     }
   }
@@ -126,7 +126,16 @@ class vector {
     return (*this)[pos];
   }
 
-  reference operator[](size_type pos) { return *(m_start + pos); }
+  const_reference at(size_type pos) const {
+    if (pos >= size()) {
+      throw std::out_of_range("Invalid position number");
+    }
+    return (*this)[pos];
+  }
+
+  reference operator[](size_type pos) noexcept { return *(m_start + pos); }
+
+  const_reference operator[](size_type pos) const noexcept { return *(m_start + pos); }
 
   reference front() { return *begin(); }
 
