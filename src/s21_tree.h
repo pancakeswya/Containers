@@ -165,7 +165,7 @@ class RBTree {
   }
 
   RBTree(const RBTree& other)
-      : node_count_(other.node_count_), key_compare(other.key_compare), base_(new Node()) {
+      : node_count_(other.node_count_), compare_(other.compare_), base_(new Node()) {
     base_->color = ColorType::kRed;
     if (!other.base_->parent) {
       base_->parent = nullptr;
@@ -178,7 +178,7 @@ class RBTree {
   }
 
   RBTree(RBTree&& other) noexcept
-      : node_count_(other.node_count_), key_compare(other.key_compare), base_(other.base_) {
+      : node_count_(other.node_count_), compare_(other.compare_), base_(other.base_) {
     other.base_ = nullptr;
     other.node_count_ = 0;
   }
@@ -216,7 +216,7 @@ class RBTree {
   void swap(RBTree& other) noexcept {
     std::swap(other.base_, base_);
     std::swap(other.node_count_, node_count_);
-    std::swap(other.key_compare, key_compare);
+    std::swap(other.compare_, compare_);
   }
 
   iterator begin() noexcept { return iterator(base_->left); }
@@ -302,7 +302,7 @@ class RBTree {
     bool cmp = true;
     while (curr_node) {
       prev_node = curr_node;
-      cmp = key_compare(KeyOfValue()(val), GetKey(curr_node));
+      cmp = compare_(KeyOfValue()(val), GetKey(curr_node));
       curr_node = cmp ? curr_node->left : curr_node->right;
     }
     auto it = iterator(prev_node);
@@ -313,7 +313,7 @@ class RBTree {
         --it;
       }
     }
-    if (key_compare(GetKey(it.node), KeyOfValue()(val))) {
+    if (compare_(GetKey(it.node), KeyOfValue()(val))) {
       return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
     }
     return std::pair<iterator, bool>(it, false);
@@ -323,7 +323,7 @@ class RBTree {
     BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
       prev_node = curr_node;
-      curr_node = key_compare(KeyOfValue()(val), GetKey(curr_node)) ?
+      curr_node = compare_(KeyOfValue()(val), GetKey(curr_node)) ?
                   curr_node->left : curr_node->right;
     }
     return std::make_pair(m_insert(curr_node, prev_node, val), true);
@@ -395,7 +395,7 @@ class RBTree {
   BasePtr m_up_bound(const Key& key) const noexcept {
     BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
-      if (key_compare(key, GetKey(curr_node))) {
+      if (compare_(key, GetKey(curr_node))) {
         prev_node = curr_node;
         curr_node = curr_node->left;
       } else {
@@ -408,7 +408,7 @@ class RBTree {
   BasePtr m_low_bound(const Key& key) const noexcept {
     BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
-      if (!key_compare(GetKey(curr_node), key)) {
+      if (!compare_(GetKey(curr_node), key)) {
         prev_node = curr_node;
         curr_node = curr_node->left;
       } else {
@@ -420,7 +420,7 @@ class RBTree {
 
   BasePtr m_find(const Key& key) const noexcept {
     BasePtr found_node = m_low_bound(key);
-    if (found_node == base_ || key_compare(key, GetKey(found_node))) {
+    if (found_node == base_ || compare_(key, GetKey(found_node))) {
       return base_;
     }
     return found_node;
@@ -429,7 +429,7 @@ class RBTree {
   iterator m_insert(BasePtr curr_node, BasePtr prev_node, const Value& val) {
     auto new_node = new Node(val);
     if (prev_node == base_ || curr_node ||
-        key_compare(KeyOfValue()(val), GetKey(prev_node))) {
+        compare_(KeyOfValue()(val), GetKey(prev_node))) {
       prev_node->left = new_node;
       if (prev_node == base_) {
         base_->parent = new_node;
@@ -667,7 +667,7 @@ class RBTree {
 
  private:
   size_type node_count_{};
-  Compare key_compare;
+  Compare compare_;
   BasePtr base_;
 };
 
