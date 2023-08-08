@@ -8,28 +8,28 @@
 namespace s21 {
 
 struct ListNodeBase {
-  ListNodeBase() noexcept : m_prev(this), m_next(this) {}
+  ListNodeBase() noexcept : prev(this), next(this) {}
 
-  ListNodeBase(ListNodeBase* const prev, ListNodeBase* const next) noexcept
-    : m_prev(prev), m_next(next) {
-    m_prev->m_next = m_next->m_prev = this;
+  ListNodeBase(ListNodeBase* const o_prev, ListNodeBase* const o_next) noexcept
+    : prev(o_prev), next(o_next) {
+    prev->next = next->prev = this;
   }
 
   virtual ~ListNodeBase() noexcept {
-    m_prev->m_next = m_next;
-    m_next->m_prev = m_prev;
+    prev->next = next;
+    next->prev = prev;
   }
 
-  ListNodeBase *m_prev;
-  ListNodeBase *m_next;
+  ListNodeBase *prev;
+  ListNodeBase *next;
 };
 
 template<typename Tp>
 struct ListNode : public ListNodeBase {
-  Tp m_data;
+  Tp data;
   ListNode() = default;
-  ListNode(ListNodeBase* const prev, ListNodeBase* const next, const Tp& data)
-    : ListNodeBase(prev, next), m_data(data) {}
+  ListNode(ListNodeBase* const o_prev, ListNodeBase* const o_next, const Tp& o_data)
+    : ListNodeBase(o_prev, o_next), data(o_data) {}
 };
 
 template<typename Tp>
@@ -41,45 +41,45 @@ struct ListIterator {
   using pointer = Tp*;
   using reference = Tp&;
 
-  ListIterator() noexcept : m_node() {}
+  ListIterator() noexcept : node() {}
 
-  explicit ListIterator(ListNodeBase* node) noexcept : m_node(node) {}
+  explicit ListIterator(ListNodeBase* node) noexcept : node(node) {}
 
-  reference operator*() const noexcept { return static_cast<Node*>(m_node)->m_data; }
+  reference operator*() const noexcept { return static_cast<Node*>(node)->data; }
 
-  pointer operator->() const noexcept { return &static_cast<Node*>(m_node)->m_data; }
+  pointer operator->() const noexcept { return &static_cast<Node*>(node)->data; }
 
   ListIterator& operator++() noexcept {
-    m_node = m_node->m_next;
+    node = node->next;
     return *this;
   }
 
   ListIterator operator++(int) noexcept {
     ListIterator ret(*this);
-    m_node = m_node->m_next;
+    node = node->next;
     return ret;
   }
 
   ListIterator& operator--() noexcept {
-    m_node = m_node->m_prev;
+    node = node->prev;
     return *this;
   }
 
   ListIterator operator--(int) noexcept {
     ListIterator ret(*this);
-    m_node = m_node->m_prev;
+    node = node->prev;
     return ret;
   }
 
   friend bool operator==(const ListIterator& lhs, const ListIterator& rhs) noexcept {
-    return lhs.m_node == rhs.m_node;
+    return lhs.node == rhs.node;
   }
 
   friend bool operator!=(const ListIterator& lhs, const ListIterator& rhs) noexcept {
-    return lhs.m_node != rhs.m_node;
+    return lhs.node != rhs.node;
   }
 
-  ListNodeBase* m_node;
+  ListNodeBase* node;
 
 };
 
@@ -93,51 +93,51 @@ struct ListConstIterator {
   using pointer = const Tp*;
   using reference = const Tp&;
 
-  ListConstIterator() noexcept : m_node() {}
+  ListConstIterator() noexcept : node() {}
 
-  explicit ListConstIterator(const ListNodeBase* node) noexcept : m_node(node) {}
+  explicit ListConstIterator(const ListNodeBase* node) noexcept : node(node) {}
 
-  ListConstIterator(const iterator& it) noexcept : m_node(it.m_node) {}
+  ListConstIterator(const iterator& it) noexcept : node(it.node) {}
 
   iterator const_cast_() noexcept {
-    return iterator(const_cast<ListNodeBase*>(m_node));
+    return iterator(const_cast<ListNodeBase*>(node));
   }
 
-  reference operator*() const noexcept { return static_cast<Node*>(m_node)->m_data; }
+  reference operator*() const noexcept { return static_cast<Node*>(node)->data; }
 
-  pointer operator->() const noexcept { return &static_cast<Node*>(m_node)->m_data; }
+  pointer operator->() const noexcept { return &static_cast<Node*>(node)->data; }
 
   ListConstIterator& operator++() noexcept {
-    m_node = m_node->m_next;
+    node = node->next;
     return *this;
   }
 
   ListConstIterator operator++(int) noexcept {
     ListConstIterator ret(*this);
-    m_node = m_node->m_next;
+    node = node->next;
     return ret;
   }
 
   ListConstIterator& operator--() noexcept {
-    m_node = m_node->m_prev;
+    node = node->prev;
     return *this;
   }
 
   ListConstIterator operator--(int) noexcept {
     ListConstIterator ret(*this);
-    m_node = m_node->m_prev;
+    node = node->prev;
     return ret;
   }
 
   friend bool operator==(const ListConstIterator& lhs, const ListConstIterator& rhs) noexcept {
-    return lhs.m_node == rhs.m_node;
+    return lhs.node == rhs.node;
   }
 
   friend bool operator!=(const ListConstIterator& lhs, const ListConstIterator& rhs) noexcept {
-    return lhs.m_node != rhs.m_node;
+    return lhs.node != rhs.node;
   }
 
-  const ListNodeBase* m_node;
+  const ListNodeBase* node;
 };
 
 template<typename Tp>
@@ -153,7 +153,7 @@ class list {
   using const_iterator = ListConstIterator<value_type>;
   using size_type = size_t;
 
-  list() : m_base(new Node()) {}
+  list() : base_(new Node()) {}
 
   explicit list(size_type n) : list()  {
     for (;n != 0; --n) {
@@ -173,14 +173,14 @@ class list {
     }
   }
 
-  list(list&& other) noexcept : m_size(other.m_size), m_base(other.m_base) {
-    other.m_base = new Node();
-    other.m_size = 0;
+  list(list&& other) noexcept : size_(other.size_), base_(other.base_) {
+    other.base_ = new Node();
+    other.size_ = 0;
   }
 
   ~list() {
     clear();
-    delete m_base;
+    delete base_;
   }
 
   list& operator=(const list& other) {
@@ -201,18 +201,18 @@ class list {
 
   void clear() {
     while (!empty()) {
-      ListNodeBase *next = m_base->m_next->m_next;
-      delete m_base->m_next;
-      m_base->m_next = next;
+      ListNodeBase *next = base_->next->next;
+      delete base_->next;
+      base_->next = next;
     }
-    m_size = 0;
+    size_ = 0;
   }
 
-  bool empty() const noexcept { return m_base == m_base->m_next; }
+  bool empty() const noexcept { return base_ == base_->next; }
 
   void erase(iterator pos) {
-    delete pos.m_node;
-    --m_size;
+    delete pos.node;
+    --size_;
   }
 
   void pop_front() {
@@ -245,30 +245,30 @@ class list {
   }
 
   void splice(const_iterator pos, list& other) {
-    ListNodeBase* node = pos.const_cast_().m_node;
+    ListNodeBase* node = pos.const_cast_().node;
 
-    node->m_prev->m_next = other.m_base->m_next;
-    other.m_base->m_next->m_prev = node->m_prev;
+    node->prev->next = other.base_->next;
+    other.base_->next->prev = node->prev;
 
-    node->m_prev = other.m_base->m_prev;
-    other.m_base->m_prev->m_next = node;
+    node->prev = other.base_->prev;
+    other.base_->prev->next = node;
 
-    other.m_base->m_next = other.m_base;
-    other.m_base->m_prev = other.m_base;
+    other.base_->next = other.base_;
+    other.base_->prev = other.base_;
 
-    m_size += other.m_size;
-    other.m_size = 0;
+    size_ += other.size_;
+    other.size_ = 0;
   }
 
   void reverse() noexcept {
-    std::swap(m_base->m_next, m_base->m_prev);
+    std::swap(base_->next, base_->prev);
     for(auto it = begin(); it != end(); ++it) {
-      std::swap(it.m_node->m_next, it.m_node->m_prev);
+      std::swap(it.node->next, it.node->prev);
     }
   }
 
   size_type size() const noexcept {
-    return m_size;
+    return size_;
   }
 
   size_type max_size() const noexcept {
@@ -303,16 +303,16 @@ class list {
   }
 
   reference back() noexcept {
-    return *iterator(m_base->m_prev);
+    return *iterator(base_->prev);
   }
 
   const_reference back() const noexcept {
-    return *const_iterator(m_base->m_prev);
+    return *const_iterator(base_->prev);
   }
 
   iterator insert(iterator pos, const_reference value) {
-    ++m_size;
-    return iterator(new Node(pos.m_node->m_prev, pos.m_node, value));
+    ++size_;
+    return iterator(new Node(pos.node->prev, pos.node, value));
   }
 
   template <typename... Args>
@@ -342,8 +342,8 @@ class list {
   }
 
   void push_front(const_reference value) {
-    ++m_size;
-    new Node(m_base, m_base->m_next, value);
+    ++size_;
+    new Node(base_, base_->next, value);
   }
 
   template <typename... Args>
@@ -360,55 +360,55 @@ class list {
   iterator emplace(const_iterator pos, Args&&... args) {
     iterator place = pos.const_cast_();
     auto node_ptr = static_cast<Node*>(::operator new(sizeof(Node)));
-    new (node_ptr) ListNodeBase(ListNodeBase(place.m_node->m_prev, place.m_node));
-    new (&node_ptr->m_data) value_type(std::forward<Args>(args)...);
-    ++m_size;
+    new (node_ptr) ListNodeBase(ListNodeBase(place.node->prev, place.node));
+    new (&node_ptr->data) value_type(std::forward<Args>(args)...);
+    ++size_;
     return iterator(node_ptr);
   }
 
   void swap(list& other) noexcept {
-    std::swap(m_base, other.m_base);
-    std::swap(m_size, other.m_size);
+    std::swap(base_, other.base_);
+    std::swap(size_, other.size_);
   }
 
   void push_back(const_reference value) {
-    ++m_size;
-    new Node(m_base->m_prev, m_base, value);
+    ++size_;
+    new Node(base_->prev, base_, value);
   }
 
   iterator begin() noexcept {
-    if (!m_base) {
+    if (!base_) {
       return iterator();
     }
-    return iterator(m_base->m_next);
+    return iterator(base_->next);
   }
 
   iterator end() noexcept {
-    return iterator(m_base);
+    return iterator(base_);
   }
 
   const_iterator begin() const noexcept {
-    return const_iterator(m_base->m_next);
+    return const_iterator(base_->next);
   }
 
   const_iterator end() const noexcept {
-    return const_iterator(m_base);
+    return const_iterator(base_);
   }
 
   const_iterator cbegin() const noexcept {
-    return const_iterator(m_base->m_next);
+    return const_iterator(base_->next);
   }
 
   const_iterator cend() const noexcept {
-    return const_iterator(m_base);
+    return const_iterator(base_);
   }
 
  private:
-  size_type m_size{};
-  ListNodeBase* m_base;
+  size_type size_{};
+  ListNodeBase* base_;
 
   iterator tail() noexcept {
-    return iterator(m_base->m_prev);
+    return iterator(base_->prev);
   }
 
   void qsort(iterator left, iterator right) noexcept {

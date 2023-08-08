@@ -14,12 +14,12 @@ struct RBTreeNodeBase {
   using BasePtr = RBTreeNodeBase*;
 
   RBTreeNodeBase() = default;
-  explicit RBTreeNodeBase(ColorType color) noexcept : m_color(color) {}
+  explicit RBTreeNodeBase(ColorType o_color) noexcept : color(o_color) {}
 
-  ColorType m_color{};
-  BasePtr m_parent{};
-  BasePtr m_left{};
-  BasePtr m_right{};
+  ColorType color{};
+  BasePtr parent{};
+  BasePtr left{};
+  BasePtr right{};
 };
 
 template<typename Tp>
@@ -27,7 +27,7 @@ struct RBTreeNode : public RBTreeNodeBase {
   Tp m_data;
 
   RBTreeNode() = default;
-  RBTreeNode(const RBTreeNode& other) : RBTreeNodeBase(other.m_color), m_data(other.m_data) {}
+  RBTreeNode(const RBTreeNode& other) : RBTreeNodeBase(other.color), m_data(other.m_data) {}
   explicit RBTreeNode(const Tp& value) : m_data(value) {}
 };
 
@@ -42,38 +42,38 @@ struct RBTreeIteratorBase {
   explicit RBTreeIteratorBase(BasePtr other_node) noexcept : node(other_node) {}
 
   void Increment() noexcept {
-    if (node->m_right) {
-      node = node->m_right;
-      while (node->m_left) {
-        node = node->m_left;
+    if (node->right) {
+      node = node->right;
+      while (node->left) {
+        node = node->left;
       }
     } else {
-      BasePtr tmp = node->m_parent;
-      while (node == tmp->m_right) {
+      BasePtr tmp = node->parent;
+      while (node == tmp->right) {
         node = tmp;
-        tmp = tmp->m_parent;
+        tmp = tmp->parent;
       }
-      if (node->m_right != tmp) {
+      if (node->right != tmp) {
         node = tmp;
       }
     }
   }
 
   void Decrement() noexcept {
-    if (node->m_color == ColorType::kRed &&
-        node->m_parent->m_parent == node) {
-      node = node->m_right;
-    } else if (node->m_left) {
-      BasePtr tmp = node->m_left;
-      while (tmp->m_right) {
-        tmp = tmp->m_right;
+    if (node->color == ColorType::kRed &&
+        node->parent->parent == node) {
+      node = node->right;
+    } else if (node->left) {
+      BasePtr tmp = node->left;
+      while (tmp->right) {
+        tmp = tmp->right;
       }
       node = tmp;
     } else {
-      BasePtr tmp = node->m_parent;
-      while (node == tmp->m_left) {
+      BasePtr tmp = node->parent;
+      while (node == tmp->left) {
         node = tmp;
-        tmp = tmp->m_parent;
+        tmp = tmp->parent;
       }
       node = tmp;
     }
@@ -159,33 +159,33 @@ class RBTree {
   using iterator = RBTreeIterator<value_type, reference, pointer>;
   using const_iterator = RBTreeIterator<value_type, const_reference, const_pointer>;
 
-  RBTree() : m_base(new Node()) {
-    m_base->m_parent = nullptr;
-    m_base->m_left = m_base->m_right = m_base;
+  RBTree() : base_(new Node()) {
+    base_->parent = nullptr;
+    base_->left = base_->right = base_;
   }
 
   RBTree(const RBTree& other)
-      : m_node_count(other.m_node_count), m_key_compare(other.m_key_compare), m_base(new Node()) {
-    m_base->m_color = ColorType::kRed;
-    if (!other.m_base->m_parent) {
-      m_base->m_parent = nullptr;
-      m_base->m_left = m_base->m_right = m_base;
+      : node_count_(other.node_count_), key_compare(other.key_compare), base_(new Node()) {
+    base_->color = ColorType::kRed;
+    if (!other.base_->parent) {
+      base_->parent = nullptr;
+      base_->left = base_->right = base_;
     } else {
-      m_base->m_parent = CopyTree(other.m_base->m_parent, m_base);
-      m_base->m_left = GetMinNode(m_base->m_parent);
-      m_base->m_right = GetMaxNode(m_base->m_parent);
+      base_->parent = CopyTree(other.base_->parent, base_);
+      base_->left = GetMinNode(base_->parent);
+      base_->right = GetMaxNode(base_->parent);
     }
   }
 
   RBTree(RBTree&& other) noexcept
-      : m_node_count(other.m_node_count), m_key_compare(other.m_key_compare), m_base(other.m_base) {
-    other.m_base = nullptr;
-    other.m_node_count = 0;
+      : node_count_(other.node_count_), key_compare(other.key_compare), base_(other.base_) {
+    other.base_ = nullptr;
+    other.node_count_ = 0;
   }
 
   ~RBTree() {
     clear();
-    delete m_base;
+    delete base_;
   }
 
   RBTree& operator=(const RBTree& other) {
@@ -205,35 +205,35 @@ class RBTree {
   }
 
   void clear() {
-    if (m_node_count != 0) {
-      DeleteTree(m_base->m_parent);
-      m_base->m_parent = nullptr;
-      m_base->m_left = m_base->m_right = m_base;
-      m_node_count = 0;
+    if (node_count_ != 0) {
+      DeleteTree(base_->parent);
+      base_->parent = nullptr;
+      base_->left = base_->right = base_;
+      node_count_ = 0;
     }
   }
 
   void swap(RBTree& other) noexcept {
-    std::swap(other.m_base, m_base);
-    std::swap(other.m_node_count, m_node_count);
-    std::swap(other.m_key_compare, m_key_compare);
+    std::swap(other.base_, base_);
+    std::swap(other.node_count_, node_count_);
+    std::swap(other.key_compare, key_compare);
   }
 
-  iterator begin() noexcept { return iterator(m_base->m_left); }
+  iterator begin() noexcept { return iterator(base_->left); }
 
-  const_iterator begin() const noexcept { return const_iterator(m_base->m_left); }
+  const_iterator begin() const noexcept { return const_iterator(base_->left); }
 
-  const_iterator cbegin() const noexcept { return const_iterator(m_base->m_left); }
+  const_iterator cbegin() const noexcept { return const_iterator(base_->left); }
 
-  iterator end() noexcept { return iterator(m_base); }
+  iterator end() noexcept { return iterator(base_); }
 
-  const_iterator end() const noexcept { return const_iterator(m_base); }
+  const_iterator end() const noexcept { return const_iterator(base_); }
 
-  const_iterator cend() const noexcept { return const_iterator(m_base); }
+  const_iterator cend() const noexcept { return const_iterator(base_); }
 
-  bool empty() const noexcept { return m_node_count == 0; }
+  bool empty() const noexcept { return node_count_ == 0; }
 
-  size_type size() const noexcept { return m_node_count; }
+  size_type size() const noexcept { return node_count_; }
 
   size_type max_size() const noexcept { return std::numeric_limits<size_type>::max()/2/sizeof(Node); }
 
@@ -298,12 +298,12 @@ class RBTree {
   }
 
   std::pair<iterator, bool> insert_unique(const Value& val) {
-    BasePtr curr_node = m_base->m_parent, prev_node = m_base;
+    BasePtr curr_node = base_->parent, prev_node = base_;
     bool cmp = true;
     while (curr_node) {
       prev_node = curr_node;
-      cmp = m_key_compare(KeyOfValue()(val), GetKey(curr_node));
-      curr_node = cmp ? curr_node->m_left : curr_node->m_right;
+      cmp = key_compare(KeyOfValue()(val), GetKey(curr_node));
+      curr_node = cmp ? curr_node->left : curr_node->right;
     }
     auto it = iterator(prev_node);
     if (cmp) {
@@ -313,18 +313,18 @@ class RBTree {
         --it;
       }
     }
-    if (m_key_compare(GetKey(it.node), KeyOfValue()(val))) {
+    if (key_compare(GetKey(it.node), KeyOfValue()(val))) {
       return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
     }
     return std::pair<iterator, bool>(it, false);
   }
 
   std::pair<iterator, bool> insert_equal(const Value& val) {
-    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
       prev_node = curr_node;
-      curr_node = m_key_compare(KeyOfValue()(val), GetKey(curr_node)) ?
-                  curr_node->m_left : curr_node->m_right;
+      curr_node = key_compare(KeyOfValue()(val), GetKey(curr_node)) ?
+                  curr_node->left : curr_node->right;
     }
     return std::make_pair(m_insert(curr_node, prev_node, val), true);
   }
@@ -332,7 +332,7 @@ class RBTree {
   void erase(iterator position) {
     auto node_to_delete = EraseRebalance(position.node);
     delete node_to_delete;
-    --m_node_count;
+    --node_count_;
   }
 
   void erase(const Key& key) {
@@ -350,22 +350,22 @@ class RBTree {
   static const Key& GetKey(BasePtr node) noexcept { return KeyOfValue()(static_cast<NodePtr>(node)->m_data); }
 
   static BasePtr GetMinNode(BasePtr root) noexcept {
-    while (root->m_left) {
-      root = root->m_left;
+    while (root->left) {
+      root = root->left;
     }
     return root;
   }
   static BasePtr GetMaxNode(BasePtr root) noexcept {
-    while (root->m_right) {
-      root = root->m_right;
+    while (root->right) {
+      root = root->right;
     }
     return root;
   }
 
   static void DeleteTree(BasePtr root) {
     while (root) {
-      DeleteTree(root->m_right);
-      BasePtr left = root->m_left;
+      DeleteTree(root->right);
+      BasePtr left = root->left;
       delete root;
       root = left;
     }
@@ -373,46 +373,46 @@ class RBTree {
 
   static NodePtr CopyTree(BasePtr root, BasePtr head) {
     auto top = new Node(*static_cast<NodePtr>(root));
-    top->m_parent = head;
-    if (root->m_right) {
-      top->m_right = CopyTree(root->m_right, top);
+    top->parent = head;
+    if (root->right) {
+      top->right = CopyTree(root->right, top);
     }
     head = top;
-    root = root->m_left;
+    root = root->left;
     while (root) {
       auto copy = new Node(*static_cast<NodePtr>(root));
-      head->m_left = copy;
-      copy->m_parent = head;
-      if (root->m_right) {
-        copy->m_right = CopyTree(root->m_right, copy);
+      head->left = copy;
+      copy->parent = head;
+      if (root->right) {
+        copy->right = CopyTree(root->right, copy);
       }
       head = copy;
-      root = root->m_left;
+      root = root->left;
     }
     return top;
   }
 
   BasePtr m_up_bound(const Key& key) const noexcept {
-    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
-      if (m_key_compare(key, GetKey(curr_node))) {
+      if (key_compare(key, GetKey(curr_node))) {
         prev_node = curr_node;
-        curr_node = curr_node->m_left;
+        curr_node = curr_node->left;
       } else {
-        curr_node = curr_node->m_right;
+        curr_node = curr_node->right;
       }
     }
     return prev_node;
   }
 
   BasePtr m_low_bound(const Key& key) const noexcept {
-    BasePtr prev_node = m_base, curr_node = m_base->m_parent;
+    BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
-      if (!m_key_compare(GetKey(curr_node), key)) {
+      if (!key_compare(GetKey(curr_node), key)) {
         prev_node = curr_node;
-        curr_node = curr_node->m_left;
+        curr_node = curr_node->left;
       } else {
-        curr_node = curr_node->m_right;
+        curr_node = curr_node->right;
       }
     }
     return prev_node;
@@ -420,238 +420,238 @@ class RBTree {
 
   BasePtr m_find(const Key& key) const noexcept {
     BasePtr found_node = m_low_bound(key);
-    if (found_node == m_base || m_key_compare(key, GetKey(found_node))) {
-      return m_base;
+    if (found_node == base_ || key_compare(key, GetKey(found_node))) {
+      return base_;
     }
     return found_node;
   }
 
   iterator m_insert(BasePtr curr_node, BasePtr prev_node, const Value& val) {
     auto new_node = new Node(val);
-    if (prev_node == m_base || curr_node ||
-        m_key_compare(KeyOfValue()(val), GetKey(prev_node))) {
-      prev_node->m_left = new_node;
-      if (prev_node == m_base) {
-        m_base->m_parent = new_node;
-        m_base->m_right = new_node;
-      } else if (prev_node == m_base->m_left) {
-        m_base->m_left = new_node;
+    if (prev_node == base_ || curr_node ||
+        key_compare(KeyOfValue()(val), GetKey(prev_node))) {
+      prev_node->left = new_node;
+      if (prev_node == base_) {
+        base_->parent = new_node;
+        base_->right = new_node;
+      } else if (prev_node == base_->left) {
+        base_->left = new_node;
       }
     } else {
-      prev_node->m_right = new_node;
-      if (prev_node == m_base->m_right) {
-        m_base->m_right = new_node;
+      prev_node->right = new_node;
+      if (prev_node == base_->right) {
+        base_->right = new_node;
       }
     }
-    new_node->m_parent = prev_node;
-    new_node->m_left = new_node->m_right = nullptr;
+    new_node->parent = prev_node;
+    new_node->left = new_node->right = nullptr;
     InsertRebalance(new_node);
-    ++m_node_count;
+    ++node_count_;
     return iterator(new_node);
   }
 
   void RotateLeft(BasePtr node) noexcept {
-    BasePtr right_child = node->m_right;
-    node->m_right = right_child->m_left;
-    if (right_child->m_left) {
-      right_child->m_left->m_parent = node;
+    BasePtr right_child = node->right;
+    node->right = right_child->left;
+    if (right_child->left) {
+      right_child->left->parent = node;
     }
-    right_child->m_parent = node->m_parent;
-    if (node == m_base->m_parent) {
-      m_base->m_parent = right_child;
-    } else if (node == node->m_parent->m_left) {
-      node->m_parent->m_left = right_child;
+    right_child->parent = node->parent;
+    if (node == base_->parent) {
+      base_->parent = right_child;
+    } else if (node == node->parent->left) {
+      node->parent->left = right_child;
     } else {
-      node->m_parent->m_right = right_child;
+      node->parent->right = right_child;
     }
-    right_child->m_left = node;
-    node->m_parent = right_child;
+    right_child->left = node;
+    node->parent = right_child;
   }
 
   void RotateRight(BasePtr node) noexcept {
-    BasePtr left_child = node->m_left;
-    node->m_left = left_child->m_right;
-    if (left_child->m_right) {
-      left_child->m_right->m_parent = node;
+    BasePtr left_child = node->left;
+    node->left = left_child->right;
+    if (left_child->right) {
+      left_child->right->parent = node;
     }
-    left_child->m_parent = node->m_parent;
-    if (node == m_base->m_parent) {
-      m_base->m_parent = left_child;
-    } else if (node == node->m_parent->m_right) {
-      node->m_parent->m_right = left_child;
+    left_child->parent = node->parent;
+    if (node == base_->parent) {
+      base_->parent = left_child;
+    } else if (node == node->parent->right) {
+      node->parent->right = left_child;
     } else {
-      node->m_parent->m_left = left_child;
+      node->parent->left = left_child;
     }
-    left_child->m_right = node;
-    node->m_parent = left_child;
+    left_child->right = node;
+    node->parent = left_child;
   }
 
   void InsertRebalance(BasePtr node) noexcept {
-    node->m_color = ColorType::kRed;
-    while (node != m_base->m_parent && node->m_parent->m_color == ColorType::kRed) {
+    node->color = ColorType::kRed;
+    while (node != base_->parent && node->parent->color == ColorType::kRed) {
       BasePtr uncle;
-      if (node->m_parent == node->m_parent->m_parent->m_left) {
-        uncle = node->m_parent->m_parent->m_right;
-        if (uncle && uncle->m_color == ColorType::kRed) {
-          node->m_parent->m_color = ColorType::kBlack;
-          uncle->m_color = ColorType::kBlack;
-          node->m_parent->m_parent->m_color = ColorType::kRed;
-          node = node->m_parent->m_parent;
+      if (node->parent == node->parent->parent->left) {
+        uncle = node->parent->parent->right;
+        if (uncle && uncle->color == ColorType::kRed) {
+          node->parent->color = ColorType::kBlack;
+          uncle->color = ColorType::kBlack;
+          node->parent->parent->color = ColorType::kRed;
+          node = node->parent->parent;
         } else {
-          if (node == node->m_parent->m_right) {
-            node = node->m_parent;
+          if (node == node->parent->right) {
+            node = node->parent;
             RotateLeft(node);
           }
-          node->m_parent->m_color = ColorType::kBlack;
-          node->m_parent->m_parent->m_color = ColorType::kRed;
-          RotateRight(node->m_parent->m_parent);
+          node->parent->color = ColorType::kBlack;
+          node->parent->parent->color = ColorType::kRed;
+          RotateRight(node->parent->parent);
         }
       } else {
-        uncle = node->m_parent->m_parent->m_left;
-        if (uncle && uncle->m_color == ColorType::kRed) {
-          node->m_parent->m_color = ColorType::kBlack;
-          uncle->m_color = ColorType::kBlack;
-          node->m_parent->m_parent->m_color = ColorType::kRed;
-          node = node->m_parent->m_parent;
+        uncle = node->parent->parent->left;
+        if (uncle && uncle->color == ColorType::kRed) {
+          node->parent->color = ColorType::kBlack;
+          uncle->color = ColorType::kBlack;
+          node->parent->parent->color = ColorType::kRed;
+          node = node->parent->parent;
         } else {
-          if (node == node->m_parent->m_left) {
-            node = node->m_parent;
+          if (node == node->parent->left) {
+            node = node->parent;
             RotateRight(node);
           }
-          node->m_parent->m_color = ColorType::kBlack;
-          node->m_parent->m_parent->m_color = ColorType::kRed;
-          RotateLeft(node->m_parent->m_parent);
+          node->parent->color = ColorType::kBlack;
+          node->parent->parent->color = ColorType::kRed;
+          RotateLeft(node->parent->parent);
         }
       }
     }
-    m_base->m_parent->m_color = ColorType::kBlack;
+    base_->parent->color = ColorType::kBlack;
   }
 
   BasePtr EraseRebalance(BasePtr node) noexcept {
     BasePtr curr_node = node, prev_node, pv_parent;
-    if (!curr_node->m_left) {
-      prev_node = curr_node->m_right;
+    if (!curr_node->left) {
+      prev_node = curr_node->right;
     } else {
-      if (!curr_node->m_right) {
-        prev_node = curr_node->m_left;
+      if (!curr_node->right) {
+        prev_node = curr_node->left;
       } else {
-        curr_node = GetMinNode(curr_node->m_right);
-        prev_node = curr_node->m_right;
+        curr_node = GetMinNode(curr_node->right);
+        prev_node = curr_node->right;
       }
     }
     if (curr_node != node) {
-      node->m_left->m_parent = curr_node;
-      curr_node->m_left = node->m_left;
-      if (curr_node != node->m_right) {
-        pv_parent = curr_node->m_parent;
+      node->left->parent = curr_node;
+      curr_node->left = node->left;
+      if (curr_node != node->right) {
+        pv_parent = curr_node->parent;
         if (prev_node) {
-          curr_node->m_parent = curr_node->m_parent;
+          curr_node->parent = curr_node->parent;
         }
-        curr_node->m_parent->m_left = prev_node;
-        curr_node->m_right = node->m_right;
-        node->m_right->m_parent = curr_node;
+        curr_node->parent->left = prev_node;
+        curr_node->right = node->right;
+        node->right->parent = curr_node;
       } else {
         pv_parent = curr_node;
       }
-      if (m_base->m_parent == node) {
-        m_base->m_parent = curr_node;
-      } else if (node->m_parent->m_left == node) {
-        node->m_parent->m_left = curr_node;
+      if (base_->parent == node) {
+        base_->parent = curr_node;
+      } else if (node->parent->left == node) {
+        node->parent->left = curr_node;
       } else {
-        node->m_parent->m_right = curr_node;
+        node->parent->right = curr_node;
       }
-      curr_node->m_parent = node->m_parent;
-      std::swap(curr_node->m_color, node->m_color);
+      curr_node->parent = node->parent;
+      std::swap(curr_node->color, node->color);
       curr_node = node;
     } else {
-      pv_parent = curr_node->m_parent;
+      pv_parent = curr_node->parent;
       if (prev_node) {
-        prev_node->m_parent = curr_node->m_parent;
+        prev_node->parent = curr_node->parent;
       }
-      if (m_base->m_parent == node) {
-        m_base->m_parent = prev_node;
+      if (base_->parent == node) {
+        base_->parent = prev_node;
       } else {
-        if (node->m_parent->m_left == node) {
-          node->m_parent->m_left = prev_node;
+        if (node->parent->left == node) {
+          node->parent->left = prev_node;
         } else {
-          node->m_parent->m_right = prev_node;
+          node->parent->right = prev_node;
         }
       }
-      if (m_base->m_left == node) {
-        if (!node->m_right) {
-          m_base->m_left = node->m_parent;
+      if (base_->left == node) {
+        if (!node->right) {
+          base_->left = node->parent;
         } else {
-          m_base->m_left = GetMinNode(prev_node);
+          base_->left = GetMinNode(prev_node);
         }
       }
-      if (m_base->m_right == node) {
-        if (!node->m_left) {
-          m_base->m_right = node->m_parent;
+      if (base_->right == node) {
+        if (!node->left) {
+          base_->right = node->parent;
         } else {
-          m_base->m_right = GetMaxNode(prev_node);
+          base_->right = GetMaxNode(prev_node);
         }
       }
     }
-    if (curr_node->m_color != ColorType::kRed) {
-      while (prev_node != m_base->m_parent &&
-          (!prev_node || prev_node->m_color == ColorType::kBlack)) {
+    if (curr_node->color != ColorType::kRed) {
+      while (prev_node != base_->parent &&
+          (!prev_node || prev_node->color == ColorType::kBlack)) {
         BasePtr uncle;
-        if (prev_node == pv_parent->m_left) {
-          uncle = pv_parent->m_right;
-          if (uncle->m_color == ColorType::kRed) {
-            uncle->m_color = ColorType::kBlack;
-            pv_parent->m_color = ColorType::kRed;
+        if (prev_node == pv_parent->left) {
+          uncle = pv_parent->right;
+          if (uncle->color == ColorType::kRed) {
+            uncle->color = ColorType::kBlack;
+            pv_parent->color = ColorType::kRed;
             RotateLeft(pv_parent);
-            uncle = pv_parent->m_right;
+            uncle = pv_parent->right;
           }
-          if ((!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack) &&
-              (!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack)) {
-            uncle->m_color = ColorType::kRed;
+          if ((!uncle->left || uncle->left->color == ColorType::kBlack) &&
+              (!uncle->right || uncle->right->color == ColorType::kBlack)) {
+            uncle->color = ColorType::kRed;
             prev_node = pv_parent;
-            pv_parent = pv_parent->m_parent;
+            pv_parent = pv_parent->parent;
           } else {
-            if (!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack) {
-              if (uncle->m_left) {
-                uncle->m_left->m_color = ColorType::kBlack;
+            if (!uncle->right || uncle->right->color == ColorType::kBlack) {
+              if (uncle->left) {
+                uncle->left->color = ColorType::kBlack;
               }
-              uncle->m_color = ColorType::kRed;
+              uncle->color = ColorType::kRed;
               RotateRight(uncle);
-              uncle = pv_parent->m_right;
+              uncle = pv_parent->right;
             }
-            uncle->m_color = pv_parent->m_color;
-            pv_parent->m_color = ColorType::kBlack;
-            if (uncle->m_right) {
-              uncle->m_right->m_color = ColorType::kBlack;
+            uncle->color = pv_parent->color;
+            pv_parent->color = ColorType::kBlack;
+            if (uncle->right) {
+              uncle->right->color = ColorType::kBlack;
             }
             RotateLeft(pv_parent);
             break;
           }
         } else {
-          uncle = pv_parent->m_left;
-          if (uncle->m_color == ColorType::kRed) {
-            uncle->m_color = ColorType::kBlack;
-            pv_parent->m_color = ColorType::kRed;
+          uncle = pv_parent->left;
+          if (uncle->color == ColorType::kRed) {
+            uncle->color = ColorType::kBlack;
+            pv_parent->color = ColorType::kRed;
             RotateRight(pv_parent);
-            uncle = pv_parent->m_left;
+            uncle = pv_parent->left;
           }
-          if ((!uncle->m_right || uncle->m_right->m_color == ColorType::kBlack) &&
-              (!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack)) {
-            uncle->m_color = ColorType::kRed;
+          if ((!uncle->right || uncle->right->color == ColorType::kBlack) &&
+              (!uncle->left || uncle->left->color == ColorType::kBlack)) {
+            uncle->color = ColorType::kRed;
             prev_node = pv_parent;
-            pv_parent = pv_parent->m_parent;
+            pv_parent = pv_parent->parent;
           } else {
-            if (!uncle->m_left || uncle->m_left->m_color == ColorType::kBlack) {
-              if (uncle->m_right) {
-                uncle->m_right->m_color = ColorType::kBlack;
+            if (!uncle->left || uncle->left->color == ColorType::kBlack) {
+              if (uncle->right) {
+                uncle->right->color = ColorType::kBlack;
               }
-              uncle->m_color = ColorType::kRed;
+              uncle->color = ColorType::kRed;
               RotateLeft(uncle);
-              uncle = pv_parent->m_left;
+              uncle = pv_parent->left;
             }
-            uncle->m_color = pv_parent->m_color;
-            pv_parent->m_color = ColorType::kBlack;
-            if (uncle->m_left) {
-              uncle->m_left->m_color = ColorType::kBlack;
+            uncle->color = pv_parent->color;
+            pv_parent->color = ColorType::kBlack;
+            if (uncle->left) {
+              uncle->left->color = ColorType::kBlack;
             }
             RotateRight(pv_parent);
             break;
@@ -659,16 +659,16 @@ class RBTree {
         }
       }
       if (prev_node) {
-        prev_node->m_color = ColorType::kBlack;
+        prev_node->color = ColorType::kBlack;
       }
     }
     return curr_node;
   }
 
  private:
-  size_type m_node_count{};
-  Compare m_key_compare;
-  BasePtr m_base;
+  size_type node_count_{};
+  Compare key_compare;
+  BasePtr base_;
 };
 
 } // namespace s21

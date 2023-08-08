@@ -23,28 +23,28 @@ class vector {
   explicit vector(size_type n) {
     create_storage(n);
     for(;n != 0; --n) {
-      m_allocator.construct(m_finish++);
+      allocator_.construct(finish_++);
     }
   }
 
   vector(std::initializer_list<value_type> const& items) {
     create_storage(items.size());
     for (auto& item : items) {
-      m_allocator.construct(m_finish++, item);
+      allocator_.construct(finish_++, item);
     }
   }
 
   vector(const vector& other) {
     create_storage(other.capacity());
     for (auto& val : other) {
-      m_allocator.construct(m_finish++, val);
+      allocator_.construct(finish_++, val);
     }
   }
 
   vector(vector&& other) noexcept
-    : m_start(other.m_start),m_finish(other.m_finish),
-      m_capacity(other.m_capacity), m_allocator(std::move(other.m_allocator)) {
-    other.m_start = other.m_finish = other.m_capacity = nullptr;
+    : start_(other.start_),finish_(other.finish_),
+      capacity_(other.capacity_), allocator_(std::move(other.allocator_)) {
+    other.start_ = other.finish_ = other.capacity_ = nullptr;
   }
 
   ~vector() {
@@ -68,31 +68,31 @@ class vector {
   }
 
   const Tp* data() const noexcept {
-    return m_start;
+    return start_;
   }
 
-  iterator begin() noexcept { return m_start; }
+  iterator begin() noexcept { return start_; }
 
-  const_iterator begin() const noexcept { return m_start; }
+  const_iterator begin() const noexcept { return start_; }
 
   const_iterator cbegin() const noexcept {
-    return m_start;
+    return start_;
   }
 
-  iterator end() noexcept { return m_finish; }
+  iterator end() noexcept { return finish_; }
 
-  const_iterator end() const noexcept { return m_finish; }
+  const_iterator end() const noexcept { return finish_; }
 
   const_iterator cend() const noexcept {
-    return m_finish;
+    return finish_;
   }
 
   size_type size() const noexcept {
-    return m_finish - m_start;
+    return finish_ - start_;
   }
 
   size_type max_size() const noexcept {
-    return m_allocator.max_size();
+    return allocator_.max_size();
   }
 
   bool empty() const noexcept {
@@ -100,14 +100,14 @@ class vector {
   }
 
   size_type capacity() const noexcept {
-    return m_capacity - m_start;
+    return capacity_ - start_;
   }
 
   void clear() noexcept {
     for(iterator p = begin(); p != end(); ++p) {
-      m_allocator.destroy(p);
+      allocator_.destroy(p);
     }
-    m_finish = m_start;
+    finish_ = start_;
   }
 
   void reserve(size_type n) {
@@ -133,9 +133,9 @@ class vector {
     return (*this)[pos];
   }
 
-  reference operator[](size_type pos) noexcept { return *(m_start + pos); }
+  reference operator[](size_type pos) noexcept { return *(start_ + pos); }
 
-  const_reference operator[](size_type pos) const noexcept { return *(m_start + pos); }
+  const_reference operator[](size_type pos) const noexcept { return *(start_ + pos); }
 
   reference front() { return *begin(); }
 
@@ -149,8 +149,8 @@ class vector {
   iterator emplace(const_iterator pos, Args&&... args) {
     auto offset = pos - cbegin();
     iterator new_pos = make_gap(offset);
-    m_allocator.construct(new_pos, std::forward<Args>(args)...);
-    ++m_finish;
+    allocator_.construct(new_pos, std::forward<Args>(args)...);
+    ++finish_;
     return new_pos;
   }
 
@@ -162,8 +162,8 @@ class vector {
   iterator insert(iterator pos, const_reference value) {
     auto offset = pos - begin();
     iterator new_pos = make_gap(offset);
-    m_allocator.construct(new_pos, value);
-    ++m_finish;
+    allocator_.construct(new_pos, value);
+    ++finish_;
     return new_pos;
   }
 
@@ -190,8 +190,8 @@ class vector {
   }
 
   void pop_back() {
-    --m_finish;
-    m_allocator.destroy(end());
+    --finish_;
+    allocator_.destroy(end());
   }
 
   void shrink_to_fit() {
@@ -208,10 +208,10 @@ class vector {
   }
 
   void swap(vector& other) noexcept {
-    std::swap(m_start, other.m_start);
-    std::swap(m_finish, other.m_finish);
-    std::swap(m_capacity, other.m_capacity);
-    std::swap(m_allocator, other.m_allocator);
+    std::swap(start_, other.start_);
+    std::swap(finish_, other.finish_);
+    std::swap(capacity_, other.capacity_);
+    std::swap(allocator_, other.allocator_);
   }
 
  private:
@@ -225,18 +225,18 @@ class vector {
   }
 
   bool storage_is_full() noexcept {
-    return m_finish == m_capacity;
+    return finish_ == capacity_;
   }
 
   void reallocate_storage(iterator end_of_storage, size_type new_cap) {
     size_type old_size = size();
     size_type new_size = (new_cap < old_size) ? new_cap : old_size;
-    iterator new_start = m_allocator.allocate(new_cap);
+    iterator new_start = allocator_.allocate(new_cap);
     std::move(begin(), end_of_storage, new_start);
     destroy_storage();
-    m_start = new_start;
-    m_finish = m_start + new_size;
-    m_capacity = m_start + new_cap;
+    start_ = new_start;
+    finish_ = start_ + new_size;
+    capacity_ = start_ + new_cap;
   }
 
   void grow_storage() {
@@ -250,21 +250,21 @@ class vector {
   }
 
   void create_storage(size_type n) {
-    m_start = (n != 0) ? m_allocator.allocate(n) : nullptr;
-    m_finish = m_start;
-    m_capacity = m_start + n;
+    start_ = (n != 0) ? allocator_.allocate(n) : nullptr;
+    finish_ = start_;
+    capacity_ = start_ + n;
   }
 
   void destroy_storage() {
     clear();
-    m_allocator.deallocate(m_start, m_capacity - m_start);
-    m_start = m_finish = m_capacity = nullptr;
+    allocator_.deallocate(start_, capacity_ - start_);
+    start_ = finish_ = capacity_ = nullptr;
   }
 
-  iterator m_start{},
-           m_finish{},
-           m_capacity{};
-  allocator_type m_allocator;
+  iterator start_{},
+           finish_{},
+           capacity_{};
+  allocator_type allocator_;
 
 };
 

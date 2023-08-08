@@ -25,44 +25,44 @@ class set {
 
   set(std::initializer_list<value_type> const& items) {
     for(auto& item : items) {
-      m_tree.insert_unique(item);
+      tree_.insert_unique(item);
     }
   }
 
-  set(const set& other) noexcept : m_tree(other.m_tree) {}
+  set(const set& other) noexcept : tree_(other.tree_) {}
 
-  set(set&& other) noexcept : m_tree(std::move(other.m_tree)) {}
+  set(set&& other) noexcept : tree_(std::move(other.tree_)) {}
 
   ~set() = default;
 
   set& operator=(set&& other) noexcept {
-    m_tree = std::move(other.m_tree);
+    tree_ = std::move(other.tree_);
     return *this;
   }
 
   set& operator=(const set& other) {
-    m_tree = other.m_tree;
+    tree_ = other.tree_;
     return *this;
   }
 
   void clear() {
-    m_tree.clear();
+    tree_.clear();
   }
 
    bool empty() const noexcept {
-    return m_tree.empty();
+    return tree_.empty();
   }
 
   size_type size() const noexcept {
-    return m_tree.size();
+    return tree_.size();
   }
 
   size_type max_size() const noexcept {
-    return m_tree.max_size();
+    return tree_.max_size();
   }
 
   std::pair<iterator, bool> insert(const value_type& value) {
-    return m_tree.insert_unique(value);
+    return tree_.insert_unique(value);
   }
 
   template <typename... Args>
@@ -77,55 +77,55 @@ class set {
   }
 
   void erase(iterator pos) {
-    m_tree.erase(*pos);
+    tree_.erase(*pos);
   }
 
   void swap(set& other) noexcept {
-    m_tree.swap(other.m_tree);
+    tree_.swap(other.tree_);
   }
 
   void merge(set& other) {
-    m_tree.merge_unique(other.m_tree);
+    tree_.merge_unique(other.tree_);
   }
 
   iterator find(const Key& key) noexcept {
-    return m_tree.find(key);
+    return tree_.find(key);
   }
 
   const_iterator find(const Key& key) const noexcept {
-    return m_tree.find(key);
+    return tree_.find(key);
   }
 
   bool contains(const Key& key) const noexcept {
-    return m_tree.find(key) != end();
+    return tree_.find(key) != end();
   }
 
   iterator begin() noexcept {
-    return m_tree.begin();
+    return tree_.begin();
   }
 
   const_iterator begin() const noexcept {
-    return m_tree.cbegin();
+    return tree_.cbegin();
   }
 
   const_iterator cbegin() const noexcept {
-    return m_tree.cbegin();
+    return tree_.cbegin();
   }
 
   iterator end() noexcept {
-    return m_tree.end();
+    return tree_.end();
   }
 
   const_iterator end() const noexcept {
-    return m_tree.cend();
+    return tree_.cend();
   }
 
   const_iterator cend() const noexcept {
-    return m_tree.cend();
+    return tree_.cend();
   }
 
  private:
-  tree m_tree{};
+  tree tree_{};
 };
 
 } // namespace s21

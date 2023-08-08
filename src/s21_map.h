@@ -23,28 +23,28 @@ class map {
 
   map(std::initializer_list<value_type> const& items) {
     for(auto& item : items) {
-      m_tree.insert_unique(item);
+      tree_.insert_unique(item);
     }
   }
 
-  map(const map& other) noexcept : m_tree(other.m_tree) {}
+  map(const map& other) noexcept : tree_(other.tree_) {}
 
-  map(map&& other) noexcept : m_tree(std::move(other.m_tree)) {}
+  map(map&& other) noexcept : tree_(std::move(other.tree_)) {}
 
   ~map() = default;
 
   map& operator=(map&& other)  noexcept {
-    m_tree = std::move(other.m_tree);
+    tree_ = std::move(other.tree_);
     return *this;
   }
 
   map& operator=(const map& other) {
-    m_tree = other.m_tree;
+    tree_ = other.tree_;
     return *this;
   }
 
   mapped_type& at(const Key& key) {
-    iterator it = m_tree.lower_bound(key);
+    iterator it = tree_.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       throw std::out_of_range("Missing key in map");
     }
@@ -52,7 +52,7 @@ class map {
   }
 
   const mapped_type& at(const Key& key) const {
-    const_iterator it = m_tree.lower_bound(key);
+    const_iterator it = tree_.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       throw std::out_of_range("Missing key in map");
     }
@@ -60,7 +60,7 @@ class map {
   }
 
   mapped_type& operator[](const Key& key) {
-    iterator it = m_tree.lower_bound(key);
+    iterator it = tree_.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       auto ins_it = insert(value_type(key, mapped_type())).first;
       return (*ins_it).second;
@@ -69,7 +69,7 @@ class map {
   }
 
   const mapped_type& operator[](const Key& key) const {
-    const_iterator it = m_tree.lower_bound(key);
+    const_iterator it = tree_.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
       auto ins_it = insert(value_type(key, mapped_type())).first;
       return (*ins_it).second;
@@ -78,23 +78,23 @@ class map {
   }
 
   void clear() {
-    m_tree.clear();
+    tree_.clear();
   }
 
    bool empty() const noexcept {
-    return m_tree.empty();
+    return tree_.empty();
   }
 
   size_type size() const noexcept {
-    return m_tree.size();
+    return tree_.size();
   }
 
   size_type max_size() const noexcept {
-    return m_tree.max_size();
+    return tree_.max_size();
   }
 
   std::pair<iterator, bool> insert(const value_type& value) {
-    return m_tree.insert_unique(value);
+    return tree_.insert_unique(value);
   }
 
   template <typename... Args>
@@ -109,25 +109,25 @@ class map {
   }
 
   void erase(iterator pos) {
-    m_tree.erase((*pos).first);
+    tree_.erase((*pos).first);
   }
 
   void swap(map& other) noexcept {
-    m_tree.swap(other.m_tree);
+    tree_.swap(other.tree_);
   }
 
   void merge(map& other) {
-    m_tree.merge_unique(other.m_tree);
+    tree_.merge_unique(other.tree_);
   }
 
   std::pair<iterator, bool> insert(const Key& key, const Tp& obj) {
-    return m_tree.insert_unique(value_type(key, obj));
+    return tree_.insert_unique(value_type(key, obj));
   }
 
   std::pair<iterator, bool> insert_or_assign(const Key& key, const Tp& obj) {
-    iterator it = m_tree.lower_bound(key);
+    iterator it = tree_.lower_bound(key);
     if (it == end() || Compare()(key, (*it).first)) {
-      m_tree.insert_unique(value_type(key, obj));
+      tree_.insert_unique(value_type(key, obj));
       return std::make_pair(it, true);
     }
     (*it).second = obj;
@@ -135,35 +135,35 @@ class map {
   }
 
   bool contains(const Key& key) const noexcept {
-    return m_tree.count(key) != 0;
+    return tree_.count(key) != 0;
   }
 
   iterator begin() noexcept {
-    return m_tree.begin();
+    return tree_.begin();
   }
 
   const_iterator begin() const noexcept {
-    return m_tree.cbegin();
+    return tree_.cbegin();
   }
 
   const_iterator cbegin() const noexcept {
-    return m_tree.cbegin();
+    return tree_.cbegin();
   }
 
   iterator end() noexcept {
-    return m_tree.end();
+    return tree_.end();
   }
 
   const_iterator end() const noexcept {
-    return m_tree.cend();
+    return tree_.cend();
   }
 
   const_iterator cend() const noexcept {
-    return m_tree.cend();
+    return tree_.cend();
   }
 
  private:
-  tree m_tree{};
+  tree tree_{};
 };
 
 } //namespace s21
