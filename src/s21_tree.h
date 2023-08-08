@@ -117,13 +117,13 @@ struct RBTreeIterator : public RBTreeIteratorBase {
   }
 };
 
-inline bool operator==(const RBTreeIteratorBase &rhs,
-                       const RBTreeIteratorBase &lhs) noexcept {
+inline bool operator==(const RBTreeIteratorBase& rhs,
+                       const RBTreeIteratorBase& lhs) noexcept {
   return rhs.node == lhs.node;
 }
 
-inline bool operator!=(const RBTreeIteratorBase &rhs,
-                       const RBTreeIteratorBase &lhs) noexcept {
+inline bool operator!=(const RBTreeIteratorBase& rhs,
+                       const RBTreeIteratorBase& lhs) noexcept {
   return rhs.node != lhs.node;
 }
 
@@ -131,12 +131,12 @@ namespace KeyGetters {
 
 template<class Tp>
 struct identity {
-  const Tp &operator()(const Tp &r) const noexcept { return r; }
+  const Tp& operator()(const Tp& r) const noexcept { return r; }
 };
 
 template<class Pair>
 struct select_first {
-  const typename Pair::first_type &operator()(const Pair &p) const noexcept { return p.first; }
+  const typename Pair::first_type& operator()(const Pair& p) const noexcept { return p.first; }
 };
 
 } // KeyGetters
@@ -238,11 +238,11 @@ class RBTree {
   size_type max_size() const noexcept { return std::numeric_limits<size_type>::max()/2/sizeof(Node); }
 
   iterator find(const Key& key) noexcept {
-    return iterator(m_find(key));
+    return iterator(find_(key));
   }
 
   const_iterator find(const Key& key) const noexcept {
-    return const_iterator(m_find(key));
+    return const_iterator(find_(key));
   }
 
   std::pair<iterator, iterator> equal_range(const Key& key) noexcept {
@@ -254,19 +254,19 @@ class RBTree {
   }
 
   iterator lower_bound(const Key& key) noexcept {
-    return iterator(m_low_bound(key));
+    return iterator(lower_bound_(key));
   }
 
   const_iterator lower_bound(const Key& key) const noexcept {
-    return const_iterator(m_low_bound(key));
+    return const_iterator(lower_bound_(key));
   }
 
   iterator upper_bound(const Key& key) noexcept {
-    return iterator(m_up_bound(key));
+    return iterator(upper_bound_(key));
   }
 
   const_iterator upper_bound(const Key& key) const noexcept {
-    return const_iterator(m_up_bound(key));
+    return const_iterator(upper_bound_(key));
   }
 
   size_type count(const Key& key) const noexcept {
@@ -308,13 +308,13 @@ class RBTree {
     auto it = iterator(prev_node);
     if (cmp) {
       if (it == begin()) {
-        return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
+        return std::pair<iterator, bool>(insert_(curr_node, prev_node, val), true);
       } else {
         --it;
       }
     }
     if (compare_(GetKey(it.node), KeyOfValue()(val))) {
-      return std::pair<iterator, bool>(m_insert(curr_node, prev_node, val), true);
+      return std::pair<iterator, bool>(insert_(curr_node, prev_node, val), true);
     }
     return std::pair<iterator, bool>(it, false);
   }
@@ -326,7 +326,7 @@ class RBTree {
       curr_node = compare_(KeyOfValue()(val), GetKey(curr_node)) ?
                   curr_node->left : curr_node->right;
     }
-    return std::make_pair(m_insert(curr_node, prev_node, val), true);
+    return std::make_pair(insert_(curr_node, prev_node, val), true);
   }
 
   void erase(iterator position) {
@@ -392,7 +392,7 @@ class RBTree {
     return top;
   }
 
-  BasePtr m_up_bound(const Key& key) const noexcept {
+  BasePtr upper_bound_(const Key& key) const noexcept {
     BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
       if (compare_(key, GetKey(curr_node))) {
@@ -405,7 +405,7 @@ class RBTree {
     return prev_node;
   }
 
-  BasePtr m_low_bound(const Key& key) const noexcept {
+  BasePtr lower_bound_(const Key& key) const noexcept {
     BasePtr prev_node = base_, curr_node = base_->parent;
     while (curr_node) {
       if (!compare_(GetKey(curr_node), key)) {
@@ -418,15 +418,15 @@ class RBTree {
     return prev_node;
   }
 
-  BasePtr m_find(const Key& key) const noexcept {
-    BasePtr found_node = m_low_bound(key);
+  BasePtr find_(const Key& key) const noexcept {
+    BasePtr found_node = lower_bound_(key);
     if (found_node == base_ || compare_(key, GetKey(found_node))) {
       return base_;
     }
     return found_node;
   }
 
-  iterator m_insert(BasePtr curr_node, BasePtr prev_node, const Value& val) {
+  iterator insert_(BasePtr curr_node, BasePtr prev_node, const Value& val) {
     auto new_node = new Node(val);
     if (prev_node == base_ || curr_node ||
         compare_(KeyOfValue()(val), GetKey(prev_node))) {
