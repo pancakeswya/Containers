@@ -317,28 +317,18 @@ class list {
 
   template <typename... Args>
   iterator insert_many(iterator pos,Args&&... args) {
-    ([&]
-    {
-      pos = insert(pos, args);
-      ++pos;
-    } (), ...);
+    ((pos = insert(pos, args),++pos),...);
     return pos;
   }
 
   template <typename... Args>
   void insert_many_back(Args&&... args) {
-    ([&]
-    {
-      push_back(args);
-    } (), ...);
+    (push_back(args), ...);
   }
 
   template <typename... Args>
   void insert_many_front(Args&&... args) {
-    ([&]
-    {
-      push_front(args);
-    } (), ...);
+    (push_front(args), ...);
   }
 
   void push_front(const_reference value) {

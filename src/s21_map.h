@@ -100,11 +100,9 @@ class map {
   template <typename... Args>
   vector<std::pair<iterator,bool>> insert_many(Args&&... args) {
     vector<std::pair<iterator, bool>> inserted;
-    ([&]
-    {
-      auto ins_pair = insert(args);
-      inserted.push_back(ins_pair);
-    } (), ...);
+    std::pair<iterator, bool> ins_pair;
+    ((ins_pair = insert(args),
+      inserted.push_back(ins_pair)), ...);
     return inserted;
   }
 

@@ -169,20 +169,13 @@ class vector {
 
   template <typename... Args>
   iterator insert_many(iterator pos, Args&&... args) {
-    ([&]
-    {
-      pos = insert(pos, args);
-      ++pos;
-    } (), ...);
+    ((pos = insert(pos, args),++pos), ...);
     return pos;
   }
 
   template <typename... Args>
   void insert_many_back(Args&&... args) {
-    ([&]
-    {
-      push_back(args);
-    } (), ...);
+    (push_back(args), ...);
   }
 
   void push_back(const_reference value) {
