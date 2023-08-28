@@ -16,7 +16,7 @@ class set {
   using value_type = Key;
   using reference = Key&;
   using const_reference = const Key&;
-  using tree = RBTree<key_type, value_type, KeyGetters::identity<value_type>, Compare>;
+  using tree = RBTree<key_type, value_type, KeyGetters::Identity<value_type>, Compare>;
   using iterator = typename tree::iterator;
   using const_iterator = typename tree::const_iterator;
   using size_type = typename tree::size_type;

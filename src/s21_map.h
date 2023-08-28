@@ -14,7 +14,7 @@ class map {
   using value_type = std::pair<key_type, mapped_type>;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using tree = RBTree<key_type, value_type, KeyGetters::select_first<value_type>, Compare>;
+  using tree = RBTree<key_type, value_type, KeyGetters::SelectFirst<value_type>, Compare>;
   using iterator = typename tree::iterator;
   using const_iterator = typename tree::const_iterator;
   using size_type = typename tree::size_type;

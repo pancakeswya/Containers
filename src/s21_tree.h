@@ -130,12 +130,12 @@ inline bool operator!=(const RBTreeIteratorBase& rhs,
 namespace KeyGetters {
 
 template<class Tp>
-struct identity {
+struct Identity {
   const Tp& operator()(const Tp& r) const noexcept { return r; }
 };
 
 template<class Pair>
-struct select_first {
+struct SelectFirst {
   const typename Pair::first_type& operator()(const Pair& p) const noexcept { return p.first; }
 };
 
