@@ -1,5 +1,5 @@
 # Containers
-STL containers implementation.
+STL containers implementation(only headers).
 
 ## Brief
 Use it just like standard one, but instead of `std` namespace use `s21`.
