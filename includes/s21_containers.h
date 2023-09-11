@@ -7,4 +7,4 @@
 #include "s21_set.h"
 #include "s21_vector.h"
 
-#endif // S21_CONTAINER_SRC_S21_CONTAINERS_H_
+#endif  // S21_CONTAINER_SRC_S21_CONTAINERS_H_

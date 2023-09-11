@@ -1,13 +1,13 @@
 #ifndef S21_CONTAINER_SRC_S21_VECTOR_H_
 #define S21_CONTAINER_SRC_S21_VECTOR_H_
 
-#include <memory>
 #include <initializer_list>
+#include <memory>
 #include <stdexcept>
 
 namespace s21 {
 
-template<typename Tp, typename Alloc = std::allocator<Tp>>
+template <typename Tp, typename Alloc = std::allocator<Tp>>
 class vector {
  public:
   using value_type = Tp;
@@ -22,7 +22,7 @@ class vector {
 
   explicit vector(size_type n) {
     create_storage(n);
-    for(;n != 0; --n) {
+    for (; n != 0; --n) {
       allocator_.construct(finish_++);
     }
   }
@@ -42,14 +42,14 @@ class vector {
   }
 
   vector(vector&& other) noexcept
-    : start_(other.start_),finish_(other.finish_),
-      capacity_(other.capacity_), allocator_(std::move(other.allocator_)) {
+      : start_(other.start_),
+        finish_(other.finish_),
+        capacity_(other.capacity_),
+        allocator_(std::move(other.allocator_)) {
     other.start_ = other.finish_ = other.capacity_ = nullptr;
   }
 
-  ~vector() {
-    destroy_storage();
-  }
+  ~vector() { destroy_storage(); }
 
   vector& operator=(const vector& other) {
     if (this != &other) {
@@ -59,7 +59,7 @@ class vector {
     return *this;
   }
 
-  vector& operator=(vector&& other)  noexcept {
+  vector& operator=(vector&& other) noexcept {
     vector tmp(std::move(other));
     if (this != &other) {
       swap(tmp);
@@ -67,44 +67,30 @@ class vector {
     return *this;
   }
 
-  const Tp* data() const noexcept {
-    return start_;
-  }
+  const Tp* data() const noexcept { return start_; }
 
   iterator begin() noexcept { return start_; }
 
   const_iterator begin() const noexcept { return start_; }
 
-  const_iterator cbegin() const noexcept {
-    return start_;
-  }
+  const_iterator cbegin() const noexcept { return start_; }
 
   iterator end() noexcept { return finish_; }
 
   const_iterator end() const noexcept { return finish_; }
 
-  const_iterator cend() const noexcept {
-    return finish_;
-  }
+  const_iterator cend() const noexcept { return finish_; }
 
-  size_type size() const noexcept {
-    return finish_ - start_;
-  }
+  size_type size() const noexcept { return finish_ - start_; }
 
-  size_type max_size() const noexcept {
-    return allocator_.max_size();
-  }
+  size_type max_size() const noexcept { return allocator_.max_size(); }
 
-  bool empty() const noexcept {
-    return begin() == end();
-  }
+  bool empty() const noexcept { return begin() == end(); }
 
-  size_type capacity() const noexcept {
-    return capacity_ - start_;
-  }
+  size_type capacity() const noexcept { return capacity_ - start_; }
 
   void clear() noexcept {
-    for(iterator p = begin(); p != end(); ++p) {
+    for (iterator p = begin(); p != end(); ++p) {
       allocator_.destroy(p);
     }
     finish_ = start_;
@@ -135,7 +121,9 @@ class vector {
 
   reference operator[](size_type pos) noexcept { return *(start_ + pos); }
 
-  const_reference operator[](size_type pos) const noexcept { return *(start_ + pos); }
+  const_reference operator[](size_type pos) const noexcept {
+    return *(start_ + pos);
+  }
 
   reference front() { return *begin(); }
 
@@ -169,7 +157,7 @@ class vector {
 
   template <typename... Args>
   iterator insert_many(iterator pos, Args&&... args) {
-    ((pos = insert(pos, args),++pos), ...);
+    ((pos = insert(pos, args), ++pos), ...);
     return pos;
   }
 
@@ -178,9 +166,7 @@ class vector {
     (push_back(args), ...);
   }
 
-  void push_back(const_reference value) {
-    insert(end(), value);
-  }
+  void push_back(const_reference value) { insert(end(), value); }
 
   void pop_back() {
     --finish_;
@@ -217,9 +203,7 @@ class vector {
     return new_pos;
   }
 
-  bool storage_is_full() noexcept {
-    return finish_ == capacity_;
-  }
+  bool storage_is_full() noexcept { return finish_ == capacity_; }
 
   void reallocate_storage(iterator end_of_storage, size_type new_cap) {
     size_type old_size = size();
@@ -254,13 +238,10 @@ class vector {
     start_ = finish_ = capacity_ = nullptr;
   }
 
-  iterator start_{},
-           finish_{},
-           capacity_{};
+  iterator start_{}, finish_{}, capacity_{};
   allocator_type allocator_;
-
 };
 
-} // namespace s21
+}  // namespace s21
 
-#endif // S21_CONTAINER_SRC_S21_VECTOR_H_
+#endif  // S21_CONTAINER_SRC_S21_VECTOR_H_
