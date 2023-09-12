@@ -2,8 +2,11 @@ OS         := $(shell uname -s)
 
 TEST_LIB   := gtest
 
+INC_DIR    := includes
+TEST_DIR   := test
+
 CXX        := g++
-CXXFLAGS   := -Wall -Wextra -Werror -std=c++17
+CXXFLAGS   := -Wall -Wextra -Werror -std=c++17 -I $(INC_DIR)
 
 TEST_LDLIB := $(addprefix -l,$(TEST_LIB))
 
@@ -11,9 +14,6 @@ OPEN       := $(if $(filter Linux,$(OS)),xdg-open,open)
 
 GCOV       := --coverage
 LCOV       := lcov --no-external -c
-
-INC_DIR    := includes
-TEST_DIR   := test
 
 VALGRIND   := valgrind --tool=memcheck --trace-children=yes --track-origins=yes --leak-check=full
 
@@ -30,7 +30,7 @@ MAKEFLAGS  += --no-print-directory
 all: test
 
 test:
-	$(CXX) $(CXXFLAGS) -I $(INC_DIR) $(TEST_SRCS) $(TEST_LDLIB) -o $(TEST_NAME)
+	$(CXX) $(CXXFLAGS) $(TEST_SRCS) $(TEST_LDLIB) -o $(TEST_NAME)
 	./$(TEST_NAME)
 
 .PHONY: test
@@ -42,7 +42,7 @@ check-style:
 	clang-format -style=google -n $(INC_DIR)/*.h  $(TEST_DIR)/*.cc
 
 gcov_report:
-	$(CXX) $(CXXFLAGS) $(GCOV) -I $(INC_DIR) $(TEST_SRCS) $(TEST_LDLIB) -o $(TEST_NAME)
+	$(CXX) $(CXXFLAGS) $(GCOV) $(TEST_SRCS) $(TEST_LDLIB) -o $(TEST_NAME)
 	./$(TEST_NAME)
 	$(LCOV) -t $(TEST_NAME) -d . -o $(LCOV_NAME)
 	genhtml $(LCOV_NAME) -o $(REPORT_DIR)
